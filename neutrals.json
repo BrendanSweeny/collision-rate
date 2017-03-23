@@ -1,0 +1,23 @@
+
+  {
+    "N2O": {
+      "mass": 44,
+      "polarizability": 3.03,
+      "dipoleMoment": 0.161
+    },
+    "O2": {
+      "mass": 32,
+      "polarizability": 1.12,
+      "dipoleMoment": 0
+    },
+    "H2O": {
+      "mass": 18,
+      "polarizability": 1.45,
+      "dipoleMoment": 1.85
+    },
+    "CO": {
+      "mass": 28,
+      "polarizability": 2.91,
+      "dipoleMoment": 0
+    }
+  }
