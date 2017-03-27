@@ -64,6 +64,10 @@ function CollisionRateHandler() {
 
     console.log("Neutral: " + neutralQuery + ", Ion Mass: " + ionMass + ", T: " + req.query.temp);
 
+    if (neutral === undefined) {
+      return [{"rate": null}];
+    }
+
     let neutralMass = neutral.mass;
     let neutralPolarizability = neutral.polarizability;
     let neutralDipMoment = neutral.dipoleMoment;

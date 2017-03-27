@@ -154,7 +154,7 @@
     focusText.append("tspan").attr("id", "text-rate").attr("x", 10).attr("dy", "1.2em");
 
 
-    // Rect that will inform the toolTip
+    // Invisible Rect that will inform the toolTip
     chart.append("rect")
          .attr("width", width)
          .attr("height", height)
