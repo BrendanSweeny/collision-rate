@@ -223,6 +223,10 @@ let DataSeries = React.createClass({
         d = x0 - d0.data > d1.data - x0 ? d1 : d0;
 
         focus.attr("transform", "translate(" + x(d.temp) + "," + y(d.rate) + ")");
+        focus.select(".v-line").attr("y2", height - y(d.rate));
+        focus.select(".h-line").attr("x2", 0 - x(d.temp));
+        focus.select(".text-temp").text("T: " + d.temp);
+        focus.select(".text-rate").text("Rate: " + d.rate.toPrecision(3));
   },
 
   handleMouseOver: function () {
@@ -248,6 +252,13 @@ let DataSeries = React.createClass({
         />
         <TempAxis x={x} height={height} />
         <RateAxis y={y} />
+        <Focus />
+        <Border
+          width={width}
+          height={height}
+        />
+        <AxisLabel className="x-label" x={width / 2} y={height + margin.top * 2/3} labelText="Temperature / K" />
+        <AxisLabel className="y-label" x={0 - height / 2} y={0 - margin.left / 2} transform="rotate(-90)" labelText="Rate / cm^3 molecules^-1 s^-1" />
         <rect
           className="overlay"
           width={width}
@@ -256,18 +267,79 @@ let DataSeries = React.createClass({
           onMouseOver={this.handleMouseOver}
           onMouseOut={this.handleMouseOut}
         />
-        <Focus />
       </g>
     );
   }
 });
 
+let AxisLabel = React.createClass({
+  propTypes: {
+    x: React.PropTypes.number,
+    y: React.PropTypes.number,
+    textAnchor: React.PropTypes.string,
+    labelText: React.PropTypes.string,
+    transform: React.PropTypes.string
+  },
+
+  getDefaultProps: function () {
+    return {
+      textAnchor: "middle",
+      transform: "rotate(0)"
+    };
+  },
+
+  render: function () {
+    let { x, y, textAnchor, labelText, transform } = this.props;
+    return (
+      <text textAnchor={textAnchor} x={x} y={y} transform={transform}>
+        {labelText}
+      </text>
+    )
+  }
+});
+
+let Border = React.createClass({
+  propTypes: {
+    width: React.PropTypes.number.isRequired,
+    height: React.PropTypes.number.isRequired,
+    stroke: React.PropTypes.string,
+    strokeWidth: React.PropTypes.string,
+    fill: React.PropTypes.string
+  },
+
+  getDefaultProps: function () {
+    return {
+      stroke: "black",
+      strokeWidth: "0.1em",
+      fill: "none"
+    };
+  },
+
+  render: function () {
+    let { width, height, stroke, strokeWidth, fill } = this.props;
+
+    return (
+      <rect
+        width={width}
+        height={height}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        fill={fill}
+      />
+    )
+  }
+});
+
+// Focus is rendered by D3.js in <DataSeries /> componentDidMount()
 let Focus = React.createClass({
   propTypes: {
     fill: React.PropTypes.string,
     stroke: React.PropTypes.string,
     strokeWidth: React.PropTypes.number,
-    display: React.PropTypes.string
+    display: React.PropTypes.string,
+    x: React.PropTypes.number,
+    y: React.PropTypes.number,
+    dy: React.PropTypes.string
   },
 
   getDefaultProps: function () {
@@ -275,12 +347,15 @@ let Focus = React.createClass({
       fill: 'none',
       stroke: 'blue',
       strokeWidth: 2,
-      display: "none"
+      display: "none",
+      x: 20,
+      y: -40,
+      dy: "1.2em"
     }
   },
 
   render: function () {
-    let { fill, stroke, strokeWidth, display } = this.props;
+    let { fill, stroke, strokeWidth, display, x, y, dy } = this.props;
     return (
       <g className="focus" style={{display: display}} >
         <circle
@@ -290,6 +365,12 @@ let Focus = React.createClass({
           stroke={stroke}
           strokeWidth={strokeWidth}
         />
+        <line className="h-line" style={{stroke: "blue", strokeDasharray: "5,5"}} />
+        <line className="v-line" style={{stroke: "blue", strokeDasharray: "5,5"}} />
+        <text className="text" x={x} y={y}>
+          <tspan className="text-temp" x="10" />
+          <tspan className="text-rate" x="10" dy={dy} />
+        </text>
       </g>
     )
   }
