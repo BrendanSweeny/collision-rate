@@ -8,7 +8,6 @@ module.exports = (app) => {
 
   app.get("/", (req, res) => {
     res.sendFile(process.cwd() + "/dist/index.html");
-    //res.send("Hello World");
   });
 
   app.get("/api/rate/", (req, res) => {
@@ -17,7 +16,9 @@ module.exports = (app) => {
     let format = req.query.format;
     let rate;
 
-    if (temp === "range" && format === "csv") {
+    if (!req.query.ionmass || !req.query.neutral) {
+      res.send("No ion mass or neutral specified");
+    } else if (temp === "range" && format === "csv") {
       res.send("format csv");
     } else if (temp === "range") {
       res.send(collisionRateHandler.rangeOfRates(req));

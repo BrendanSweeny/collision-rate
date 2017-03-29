@@ -13,7 +13,7 @@ function CollisionRateHandler() {
     return tau;
   }
 
-  // Hitting collision rate constant over Langevin rate constant
+  // Hitting collision rate constant divided by Langevin rate constant
   function kSC_Over_kL (tau) {
     let ratio;
     if (tau > (2 * Math.sqrt(2))) {
