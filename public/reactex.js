@@ -27,63 +27,67 @@ let RatePlotContainer = React.createClass({
       neutralString: "N2O",
       xDomain: [],
       yDomain: [],
-      defaultUrl: "http://localhost:8080/api/rate/?neutral=N2O&temp=range&ionmass=48",
-      data: []
+      data: [],
+      errorState: false
     }
   },
 
   getRates: function (link) {
     var RateRequest = new Request(link);
     return fetch(RateRequest, {method: 'get'})
-      .then(function(res) {
-        //console.log(res);
+      .then((res) => {
         if (!res.ok) {
-          return null;
+          throw new Error("Network error was encountered.");
+        } else if (res.status === 404) {
+          console.log(404);
         }
         return res.json();
       })
+      .catch((error) => {
+        console.log("There was an issue with the fetch operation: " + error.message);
+      })
   },
 
-  handleUpdateValue: function (e) {
-    if (e.target.id === "ion-input") {
-      let ionMass = e.target.value;
-      this.getRates('http://localhost:8080/api/rate/?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + ionMass)
-          .then(function(data) {
+  apiCall: function (val, valType) {
+    let newState = {};
+    if (valType === "ion") {
+      url = 'http://localhost:8080/api/rate/?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
+      newState.ionString = val;
+    } else if (valType === "neutral") {
+      url = 'http://localhost:8080/api/rate/?neutral=' + val + '&temp=range&ionmass=' + this.state.ionString;
+      newState.neutralString = val;
+    }
+
+    this.getRates(url)
+        .then(function(data) {
+          if (data === undefined) {
+            console.log(data);
+            newState.errorState = true;
+            this.setState(newState);
+          } else {
+            console.log(data);
             let xExtent = d3.extent(data, (d) => { return d.temp; })
             let yExtent = d3.extent(data, (d) => { return d.rate; })
 
             // Expand the y extent
             yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
             yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
+            newState.data = data;
+            newState.xDomain = xExtent;
+            newState.yDomain = yExtent;
+            newState.errorState = false;
+            this.setState(newState);
+          }
+        }.bind(this));
+  },
 
-            this.setState({
-              data: data,
-              xDomain: xExtent,
-              yDomain: yExtent,
-              ionString: ionMass
-            });
-          }.bind(this));
+  handleUpdateValue: function (e) {
+    if (e.target.id === "ion-input") {
+      let ionMass = e.target.value;
+      this.apiCall(ionMass, "ion");
     } else if (e.target.id === "neutral-input") {
       let neutralString = e.target.value;
-      this.getRates('http://localhost:8080/api/rate/?neutral=' + neutralString + '&temp=range&ionmass=' + this.state.ionString)
-          .then(function(data) {
-            //console.log(data);
-            if (data !== null) {
-              let xExtent = d3.extent(data, (d) => { return d.temp; })
-              let yExtent = d3.extent(data, (d) => { return d.rate; })
-
-              // Expand the y extent
-              yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
-              yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
-
-              this.setState({
-                data: data,
-                xDomain: xExtent,
-                yDomain: yExtent,
-                neutralString: neutralString
-              });
-            }
-          }.bind(this));
+      this.apiCall(neutralString, "neutral")
     }
   },
 
@@ -119,14 +123,49 @@ let RatePlotContainer = React.createClass({
           neutralString={neutralString}
           handleUpdateValue={this.handleUpdateValue}
         />
-        <LineChart
-          width={width}
-          height={height}
-          margin={margin}
-          data={data}
-          xDomain={xDomain}
-          yDomain={yDomain}
-        />
+        {this.state.errorState ? (
+          <p>Error</p>
+        ) : (
+          <LineChart
+            width={width}
+            height={height}
+            margin={margin}
+            data={data}
+            xDomain={xDomain}
+            yDomain={yDomain}
+          />
+        )}
+        <SliderContainer />
+      </div>
+    )
+  }
+});
+
+let SliderContainer = React.createClass({
+  render: function () {
+    return (
+      <div>
+        <Slider title="Neutral Mass (amu)" />
+        <Slider title="Polarizability (A^3)"/>
+        <Slider title="Dipole Moment (D)"/>
+        <Slider title="Ion Mass (amu)"/>
+      </div>
+    )
+  }
+});
+
+let Slider = React.createClass({
+  propTypes: {
+    title: React.PropTypes.string,
+  },
+
+  render: function () {
+    let { title } = this.props
+    return (
+      <div>
+        <p>{title}</p>
+        <input />
+        <input type="range" name="mass" min="0" max="100" value="80" />
       </div>
     )
   }
