@@ -11,7 +11,7 @@ module.exports = (app) => {
     res.sendFile(process.cwd() + "/dist/index.html");
   });
 
-  app.get("/api/rate/", (req, res) => {
+  app.get("/api/rate/findneutral", (req, res) => {
 
     let temp = req.query.temp;
     let format = req.query.format;
@@ -24,11 +24,31 @@ module.exports = (app) => {
     } else if (temp === "range" && format === "csv") {
       res.status(200).send("format csv");
     } else if (temp === "range") {
-      res.status(200).send(collisionRateHandler.rangeOfRates(req));
+      res.status(200).send(collisionRateHandler.rangeOfRatesFindNeutral(req));
     } else {
-      res.status(200).send(collisionRateHandler.singleRate(req));
+      res.status(200).send(collisionRateHandler.singleRateFindNeutral(req));
     }
 
   });
 
+  app.get("/api/rate/", (req, res) => {
+    let temp = req.query.temp;
+    let format = req.query.format;
+    let ionMass = req.query.ionmass;
+    let nMass = req.query.neutralmass;
+    let dipoleMoment = req.query.d;
+    let polarizability = req.query.pol;
+
+    if (!ionMass || !nMass || !dipoleMoment || !polarizability) {
+      console.log("Query is missing values.");
+      res.status(404).send(res.statusCode + " Query is missing values.");
+    } else if (temp === "range" && format === "csv") {
+      res.status(200).send("format csv");
+    } else if (temp === "range") {
+      res.status(200).send(collisionRateHandler.rangeOfRatesWithParams(req));
+    } else {
+      res.status(200).send(collisionRateHandler.singleRateWithParams(req));
+    }
+
+  });
 }

@@ -35,7 +35,7 @@ function CollisionRateHandler() {
     return rate;
   }
 
-  this.singleRate = function (req) {
+  this.singleRateFindNeutral = function (req) {
     let neutralQuery = req.query.neutral;
     let ionMass = Number(req.query.ionmass);
     let temp = Number(req.query.temp);
@@ -55,7 +55,7 @@ function CollisionRateHandler() {
     return {"ion": ionMass, "neutral": neutralQuery, "rate": collRate};
   }
 
-  this.rangeOfRates = function (req) {
+  this.rangeOfRatesFindNeutral = function (req) {
     let neutralQuery = req.query.neutral;
     let ionMass = Number(req.query.ionmass);
     let initialTemp = 100;
@@ -71,7 +71,37 @@ function CollisionRateHandler() {
     let neutralMass = neutral.mass;
     let neutralPolarizability = neutral.polarizability;
     let neutralDipMoment = neutral.dipoleMoment;
-    let rate;
+
+    let kL = langevinRate(neutralMass, ionMass, neutralPolarizability);
+
+    let rateArray = [];
+
+    for (let t = initialTemp; t <= finalTemp; t++) {
+      let tau = findTau(neutralDipMoment, t, neutralPolarizability);
+      let collRate = kSC_Over_kL(tau) * kL;
+
+      rateArray.push({"temp": t, "rate": collRate});
+    }
+
+    let outputJSON = {
+      "ionMass": ionMass,
+      "neutralName": neutralQuery,
+      "neutralMass": neutralMass,
+      "dipoleMoment": neutralDipMoment,
+      "polarizability": neutralPolarizability,
+      "rates": rateArray
+    };
+
+    return outputJSON;
+  }
+
+  this.rangeOfRatesWithParams = function (req) {
+    let ionMass = Number(req.query.ionmass);
+    let neutralMass = Number(req.query.neutralmass);
+    let neutralDipMoment = Number(req.query.d);
+    let neutralPolarizability = Number(req.query.pol);
+    let initialTemp = 100;
+    let finalTemp = 700;
 
     let kL = langevinRate(neutralMass, ionMass, neutralPolarizability);
 
@@ -84,7 +114,14 @@ function CollisionRateHandler() {
       rateArray.push({"temp": t, "rate": collRate});
     }
 
-    return rateArray;
-  }
+    let outputJSON = {
+      "ionMass": ionMass,
+      "neutralMass": neutralMass,
+      "dipoleMoment": neutralDipMoment,
+      "polarizability": neutralPolarizability,
+      "rates": rateArray
+    };
 
+    return outputJSON;
+  }
 }

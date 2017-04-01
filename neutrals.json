@@ -19,5 +19,30 @@
       "mass": 28,
       "polarizability": 2.91,
       "dipoleMoment": 0
+    },
+    "H": {
+      "mass": 1,
+      "polarizability": 0.667,
+      "dipoleMoment": 0
+    },
+    "He": {
+      "mass": 2,
+      "polarizability": 0.205,
+      "dipoleMoment": 0
+    },
+    "CO2": {
+      "mass": 44,
+      "polarizability": 2.507,
+      "dipoleMoment": 0
+    },
+    "NH3": {
+      "mass": 17,
+      "polarizability": 2.2,
+      "dipoleMoment": 1.47
+    },
+    "H2": {
+      "mass": 2,
+      "polarizability": 0.802,
+      "dipoleMoment": 0
     }
   }
