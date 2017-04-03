@@ -1,5 +1,17 @@
+
+// Packages
 let React = require('react');
 let ReactDOM = require('react-dom');
+
+// React Components
+let AxisLabel = require('./components/AxisLabel.Component.js');
+let SliderContainer = require('./components/SliderContainer.Component.js');
+let ChartPlaceHolder = require('./components/ChartPlaceHolder.Component.js');
+let Border = require('./components/Border.Component.js');
+let TempAxis = require('./components/TempAxis.Component.js');
+let RateAxis = require('./components/RateAxis.Component.js');
+let Focus = require('./components/Focus.Component.js');
+let Line = require('./components/Line.Component.js');
 
 let RatePlotContainer = React.createClass({
   getInitialState: function () {
@@ -40,71 +52,53 @@ let RatePlotContainer = React.createClass({
       })
   },
 
-  findParamsApiCall: function (ionMass, neutralMass, d, pol) {
-    let url = 'http://localhost:8080/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
-    let newState = {};
-    this.getRates(url)
-        .then(function(data) {
-          if (data === undefined) {
-            //console.log(data);
-            newState.errorState = true;
-            this.setState(newState);
-          } else {
-            //console.log(data);
-            let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
-            let yExtent = d3.extent(data.rates, (d) => { return d.rate; })
+  handleAPIResponse: function (data, newState) {
+    if (!newState) {
+      newState = {};
+    }
 
-            // Expand the y extent
-            yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
-            yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
-            newState.data = data.rates;
-            newState.xDomain = xExtent;
-            newState.yDomain = yExtent;
-            newState.errorState = false;
-            newState.ionMass = data.ionMass;
-            newState.neutralMass = data.neutralMass;
-            newState.dipoleMoment = data.dipoleMoment;
-            newState.polarizability = data.polarizability;
-            this.setState(newState);
-          }
-        }.bind(this));
+    if (!data) {
+      //console.log(data);
+      newState.errorState = true;
+      this.setState(newState);
+    } else {
+      //console.log(data);
+      let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
+      let yExtent = d3.extent(data.rates, (d) => { return d.rate; })
+
+      // Expand the y extent
+      yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
+      yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
+      newState.data = data.rates;
+      newState.xDomain = xExtent;
+      newState.yDomain = yExtent;
+      newState.errorState = false;
+      newState.ionMass = data.ionMass;
+      newState.neutralMass = data.neutralMass;
+      newState.dipoleMoment = data.dipoleMoment;
+      newState.polarizability = data.polarizability;
+      this.setState(newState);
+    }
+  },
+
+  findParamsApiCall: function (ionMass, neutralMass, d, pol) {
+    let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
+    this.getRates(url)
+        .then((data) => this.handleAPIResponse(data));
   },
 
   findNeutralApiCall: function (val, valType) {
     let newState = {};
     if (valType === "ion") {
-      url = 'http://localhost:8080/api/rate/findneutral?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
+      url = window.location.origin + '/api/rate/findneutral?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
       newState.ionMass = val;
     } else if (valType === "neutral") {
-      url = 'http://localhost:8080/api/rate/findneutral?neutral=' + val + '&temp=range&ionmass=' + this.state.ionMass;
+      url = window.location.origin + '/api/rate/findneutral?neutral=' + val + '&temp=range&ionmass=' + this.state.ionMass;
       newState.neutralString = val;
     }
 
     this.getRates(url)
-        .then(function(data) {
-          if (data === undefined) {
-            //console.log(data);
-            newState.errorState = true;
-            this.setState(newState);
-          } else {
-            //console.log(data);
-            let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
-            let yExtent = d3.extent(data.rates, (d) => { return d.rate; })
-
-            // Expand the y extent
-            yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
-            yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
-            newState.data = data.rates;
-            newState.xDomain = xExtent;
-            newState.yDomain = yExtent;
-            newState.errorState = false;
-            newState.ionMass = data.ionMass;
-            newState.neutralMass = data.neutralMass;
-            newState.dipoleMoment = data.dipoleMoment;
-            newState.polarizability = data.polarizability;
-            this.setState(newState);
-          }
-        }.bind(this));
+        .then((data) => this.handleAPIResponse(data, newState));
   },
 
   // Function called to prepare API call when neutral name is known
@@ -137,7 +131,7 @@ let RatePlotContainer = React.createClass({
   },
 
   componentWillMount: function () {
-    this.getRates('http://localhost:8080/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
+    this.getRates(window.location.origin + '/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
       .then(function(data) {
         //console.log("<RatePlotContainer />: componentWillMount", data);
         let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
@@ -164,14 +158,19 @@ let RatePlotContainer = React.createClass({
     //console.log("<RatePlotContainer />: render", neutralMass);
     return (
       <div>
-        <IonInput
-          ionMass={ionMass}
+        <ChemicalInput
+          idName="ion-input"
+          title="Ion:"
+          defaultValue={ionMass}
           handleUpdateIonNeutral={this.handleUpdateIonNeutral}
         />
-        <NeutralInput
-          neutralString={neutralString}
+        <ChemicalInput
+          idName="neutral-input"
+          title="Neutral:"
+          defaultValue={neutralString}
           handleUpdateIonNeutral={this.handleUpdateIonNeutral}
         />
+
         {this.state.errorState ? (
           <ChartPlaceHolder
             width={width}
@@ -197,109 +196,6 @@ let RatePlotContainer = React.createClass({
           handleUpdateParam={this.handleUpdateParam}
         />
       </div>
-    )
-  }
-});
-
-let SliderContainer = React.createClass({
-  propTypes: {
-    neutralMass: React.PropTypes.number,
-    ionMass: React.PropTypes.number,
-    polarizability: React.PropTypes.number,
-    dipoleMoment: React.PropTypes.number,
-    handleUpdateParam: React.PropTypes.func
-  },
-
-  render: function () {
-    let { neutralMass, ionMass, polarizability, dipoleMoment, handleUpdateParam } = this.props;
-
-    //console.log("<SliderContainer /> render: ", neutralMass);
-
-    return (
-      <div>
-        <HorizontalSlider name="neutralMass" title="Neutral Mass (amu)" min={10} max={200} step={5} defaultValue={neutralMass} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="polarizability" title="Polarizability (A^3)" min={0} max={4} step={0.1} defaultValue={polarizability} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="dipoleMoment" title="Dipole Moment (D)" min={0} max={2} step={0.1} defaultValue={dipoleMoment} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="ionMass" title="Ion Mass (amu)" min={1} max={300} step={5} defaultValue={ionMass} handleUpdateParam={handleUpdateParam} />
-      </div>
-    )
-  }
-});
-
-let HorizontalSlider = React.createClass({
-  propTypes: {
-    title: React.PropTypes.string,
-    handleUpdateParam: React.PropTypes.func,
-    max: React.PropTypes.number,
-    min: React.PropTypes.number,
-    step: React.PropTypes.number,
-    defaultValue: React.PropTypes.number,
-    name: React.PropTypes.string
-  },
-
-  getInitialState: function () {
-    return {
-      value: this.props.defaultValue ? this.props.defaultValue : 50
-    }
-  },
-
-  getDefaultProps: function () {
-    return {
-      title: "Slider",
-      max: 100,
-      min: 0,
-      step: 1
-    }
-  },
-
-  handleMoveSlider: function (e) {
-    this.setState({
-      value: e.target.value
-    })
-  },
-
-  render: function () {
-    let { title, max, min, step, defaultValue, name, handleUpdateParam } = this.props
-
-    //console.log(defaultValue, this.state.value);
-
-    return (
-      <div>
-        <p>{title}</p>
-        <input className={name} value={defaultValue} onChange={handleUpdateParam} />
-        <input className={name} type="range" min={min} max={max} step={step} value={defaultValue} onChange={handleUpdateParam} />
-      </div>
-    )
-  }
-});
-
-let ChartPlaceHolder = React.createClass({
-  propTypes: {
-    width: React.PropTypes.number,
-    height: React.PropTypes.number,
-    margin: React.PropTypes.object,
-    textAnchor: React.PropTypes.string,
-    message: React.PropTypes.string
-  },
-
-  getDefaultProps: function () {
-    return {
-      textAnchor: "middle"
-    }
-  },
-
-  render: function () {
-    let { width, height, margin, textAnchor, x, y, message } = this.props;
-    return (
-      <svg id="chart" width={width + margin.left + margin.right} height={height + margin.top + margin.bottom}>
-        <g id="plot-area" transform={"translate(" + margin.left + "," + margin.top + ")"} >
-          <Border
-            width={width}
-            height={height}
-          />
-          <text textAnchor={textAnchor} x={width / 2} y={height / 2} dangerouslySetInnerHTML={{__html: message}} />
-        </g>
-      </svg>
     )
   }
 });
@@ -446,259 +342,34 @@ let DataSeries = React.createClass({
   }
 });
 
-let AxisLabel = React.createClass({
+let ChemicalInput = React.createClass({
   propTypes: {
-    x: React.PropTypes.number,
-    y: React.PropTypes.number,
-    textAnchor: React.PropTypes.string,
-    labelText: React.PropTypes.string,
-    transform: React.PropTypes.string
+    idName: React.PropTypes.string,
+    title: React.PropTypes.string,
+    handleUpdateIonNeutral: React.PropTypes.func
   },
 
-  getDefaultProps: function () {
-    return {
-      textAnchor: "middle",
-      transform: "rotate(0)"
-    };
-  },
-
-  formatSuperscript: function (labelStr) {
-    let labelArray = labelStr.match(/([^\^\d-]+)|([\-*\d]+)/g);
-
-    let outputStr = "<tspan>";
-    labelArray.forEach((entry) => {
-      if (Number(entry)) {
-        outputStr += "<tspan baseline-shift='super'>" + entry + "</tspan>";
-      } else {
-        outputStr += entry;
-      }
-    });
-    outputStr += "</tspan>";
-    return outputStr;
-  },
-
-  render: function () {
-    let { x, y, textAnchor, labelText, transform } = this.props;
-    let formattedLabelText = this.formatSuperscript(labelText);
-
-    return (
-      <text textAnchor={textAnchor} x={x} y={y} transform={transform} dangerouslySetInnerHTML={{__html: formattedLabelText}}>
-      </text>
-    )
-  }
-});
-
-let Border = React.createClass({
-  propTypes: {
-    width: React.PropTypes.number.isRequired,
-    height: React.PropTypes.number.isRequired,
-    stroke: React.PropTypes.string,
-    strokeWidth: React.PropTypes.string,
-    fill: React.PropTypes.string
-  },
-
-  getDefaultProps: function () {
-    return {
-      stroke: "black",
-      strokeWidth: "0.1em",
-      fill: "none"
-    };
-  },
-
-  render: function () {
-    let { width, height, stroke, strokeWidth, fill } = this.props;
-
-    return (
-      <rect
-        width={width}
-        height={height}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        fill={fill}
-      />
-    )
-  }
-});
-
-// Focus is rendered by D3.js in <DataSeries /> componentDidMount()
-let Focus = React.createClass({
-  propTypes: {
-    fill: React.PropTypes.string,
-    stroke: React.PropTypes.string,
-    strokeWidth: React.PropTypes.number,
-    display: React.PropTypes.string,
-    x: React.PropTypes.number,
-    y: React.PropTypes.number,
-    dy: React.PropTypes.string
-  },
-
-  getDefaultProps: function () {
-    return {
-      fill: 'none',
-      stroke: 'blue',
-      strokeWidth: 2,
-      display: "none",
-      x: 20,
-      y: -40,
-      dy: "1.2em"
-    }
-  },
-
-  render: function () {
-    let { fill, stroke, strokeWidth, display, x, y, dy } = this.props;
-    return (
-      <g className="focus" style={{display: display}} >
-        <circle
-          className="y"
-          r="4"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-        />
-        <line className="h-line" style={{stroke: "blue", strokeDasharray: "5,5"}} />
-        <line className="v-line" style={{stroke: "blue", strokeDasharray: "5,5"}} />
-        <text className="text" x={x} y={y}>
-          <tspan className="text-temp" x="10" />
-          <tspan className="text-rate" x="10" dy={dy} />
-        </text>
-      </g>
-    )
-  }
-});
-
-let TempAxis = React.createClass({
-  propTypes: {
-    margin: React.PropTypes.object,
-    x: React.PropTypes.func,
-    height: React.PropTypes.number
-  },
-
-  render: function () {
-    let { marginTop, height } = this.props;
-    return (
-      <g ref="timeAxis" transform={"translate(0, " + height + ")"}></g>
-    );
-  },
-
-  componentDidMount: function () {
-    this.renderAxis();
-  },
-
-  componentDidUpdate: function () {
-    this.renderAxis();
-  },
-
-  renderAxis: function () {
-    this.xAxis = d3.axisBottom()
-                    .scale(this.props.x);
-
-    d3.select(this.refs.timeAxis).call(this.xAxis);
-  }
-});
-
-let RateAxis = React.createClass({
-  propTypes: {
-    y: React.PropTypes.func
-  },
-
-  render: function () {
-    return <g ref="rateAxis" />;
-  },
-
-  componentDidMount: function () {
-    this.renderAxis();
-  },
-
-  componentDidUpdate: function () {
-    this.renderAxis();
-  },
-
-  renderAxis: function () {
-    this.yAxis = d3.axisLeft()
-                    .scale(this.props.y);
-
-    d3.select(this.refs.rateAxis).call(this.yAxis.tickFormat(d3.format(".2g")));
-  }
-});
-
-let Line = React.createClass({
-  propTypes: {
-    path: React.PropTypes.string,
-    stroke: React.PropTypes.string,
-    fill: React.PropTypes.string,
-    strokeWidth: React.PropTypes.number
-  },
-
-  getDefaultProps: function () {
-    return {
-      stroke: 'green',
-      fill: 'none',
-      strokeWidth: 3
-    };
-  },
-
-  render: function () {
-    let { path, stroke, fill, strokeWidth } = this.props;
-    //console.log("<Line />: render", path);
-
-    return (
-      <path
-        d={path}
-        className="line"
-        stroke={stroke}
-        fill={fill}
-        strokeWidth={strokeWidth}
-      />
-    )
-  }
-});
-
-let IonInput = React.createClass({
-  handleUpdateIon: function (e) {
-    if (e.target.id === "ion-input") {
-      this.setState({
-        ionMass: e.target.value
-      })
-    }
-  },
-
-  render: function () {
-    return (
-      <div>
-        <h4>Ion:</h4>
-        <input
-          id="ion-input"
-          value={this.props.ionMass}
-          onChange={this.props.handleUpdateIonNeutral}
-        />
-      </div>
-    )
-  }
-});
-
-let NeutralInput = React.createClass({
   getInitialState: function () {
     return {
-      neutralString: "N2O"
+      value: this.props.defaultValue
     }
   },
 
-  handleUpdateNeutral: function (e) {
-    if (e.target.id === "neutral-input") {
+  handleUpdateIon: function (e) {
+      this.props.handleUpdateIonNeutral(e);
       this.setState({
-        neutralString: e.target.value
+        value: e.target.value
       })
-    }
   },
 
   render: function () {
     return (
       <div>
-        <h4>Neutral:</h4>
+        <h4>{this.props.title}</h4>
         <input
-          id="neutral-input"
-          value={this.props.neutralString}
-          onChange={this.props.handleUpdateIonNeutral}
+          id={this.props.idName}
+          value={this.state.value}
+          onChange={this.handleUpdateIon}
         />
       </div>
     )
