@@ -1,6 +1,7 @@
 'use strict';
 
 let React = require('react');
+let formatSuperscript = require('../utils/formatSuperscript.js')
 
 let AxisLabel = React.createClass({
   propTypes: {
@@ -18,24 +19,9 @@ let AxisLabel = React.createClass({
     };
   },
 
-  formatSuperscript: function (labelStr) {
-    let labelArray = labelStr.match(/([^\^\d-]+)|([\-*\d]+)/g);
-
-    let outputStr = "<tspan>";
-    labelArray.forEach((entry) => {
-      if (Number(entry)) {
-        outputStr += "<tspan baseline-shift='super'>" + entry + "</tspan>";
-      } else {
-        outputStr += entry;
-      }
-    });
-    outputStr += "</tspan>";
-    return outputStr;
-  },
-
   render: function () {
     let { x, y, textAnchor, labelText, transform } = this.props;
-    let formattedLabelText = this.formatSuperscript(labelText);
+    let formattedLabelText = formatSuperscript(labelText, "svg");
 
     return (
       <text textAnchor={textAnchor} x={x} y={y} transform={transform} dangerouslySetInnerHTML={{__html: formattedLabelText}}>

@@ -1,6 +1,7 @@
 'use strict';
 
 let React = require('react');
+let formatSuperscript = require('../utils/formatSuperscript');
 
 let SliderContainer = React.createClass({
   propTypes: {
@@ -19,7 +20,7 @@ let SliderContainer = React.createClass({
     return (
       <div>
         <HorizontalSlider name="neutralMass" title="Neutral Mass (amu)" min={10} max={200} step={5} defaultValue={neutralMass} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="polarizability" title="Polarizability (A^3)" min={0.1} max={4} step={0.1} defaultValue={polarizability} handleUpdateParam={handleUpdateParam} />
+        <HorizontalSlider name="polarizability" title={"Polarizability (A^3)"} min={0.1} max={4} step={0.1} defaultValue={polarizability} handleUpdateParam={handleUpdateParam} />
         <HorizontalSlider name="dipoleMoment" title="Dipole Moment (D)" min={0} max={2} step={0.1} defaultValue={dipoleMoment} handleUpdateParam={handleUpdateParam} />
         <HorizontalSlider name="ionMass" title="Ion Mass (amu)" min={1} max={300} step={5} defaultValue={ionMass} handleUpdateParam={handleUpdateParam} />
       </div>
@@ -61,12 +62,12 @@ let HorizontalSlider = React.createClass({
 
   render: function () {
     let { title, max, min, step, defaultValue, name, handleUpdateParam } = this.props
-
+    title = formatSuperscript(title, "html");
     //console.log(defaultValue, this.state.value);
 
     return (
       <div>
-        <p>{title}</p>
+        <p dangerouslySetInnerHTML={{__html: title}}></p>
         <input className={name} value={defaultValue} onChange={handleUpdateParam} />
         <input className={name} type="range" min={min} max={max} step={step} value={defaultValue} onChange={handleUpdateParam} />
       </div>
