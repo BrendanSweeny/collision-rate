@@ -21,10 +21,10 @@ let AxisLabel = React.createClass({
 
   render: function () {
     let { x, y, textAnchor, labelText, transform } = this.props;
-    let formattedLabelText = formatSuperscript(labelText, "svg");
+    labelText = formatSuperscript(labelText, "svg");
 
     return (
-      <text textAnchor={textAnchor} x={x} y={y} transform={transform} dangerouslySetInnerHTML={{__html: formattedLabelText}}>
+      <text textAnchor={textAnchor} x={x} y={y} transform={transform} dangerouslySetInnerHTML={{__html: labelText}}>
       </text>
     )
   }

@@ -16,7 +16,7 @@ let Line = require('./components/Line.Component.js');
 let RatePlotContainer = React.createClass({
   getInitialState: function () {
 
-    const margin = {top: 50, right: 200, bottom: 50, left: 100},
+    const margin = {top: 10, right: 150, bottom: 50, left: 150},
           width = 960 - margin.left - margin.right,
           height = 500 - margin.top - margin.bottom;
 
@@ -158,18 +158,20 @@ let RatePlotContainer = React.createClass({
     //console.log("<RatePlotContainer />: render", neutralMass);
     return (
       <div>
-        <ChemicalInput
-          idName="ion-input"
-          title="Ion:"
-          defaultValue={ionMass}
-          handleUpdateIonNeutral={this.handleUpdateIonNeutral}
-        />
-        <ChemicalInput
-          idName="neutral-input"
-          title="Neutral:"
-          defaultValue={neutralString}
-          handleUpdateIonNeutral={this.handleUpdateIonNeutral}
-        />
+        <div className="chem-input-container">
+          <ChemicalInput
+            idName="ion-input"
+            title="Ion"
+            defaultValue={ionMass}
+            handleUpdateIonNeutral={this.handleUpdateIonNeutral}
+          />
+          <ChemicalInput
+            idName="neutral-input"
+            title="Neutral"
+            defaultValue={neutralString}
+            handleUpdateIonNeutral={this.handleUpdateIonNeutral}
+          />
+        </div>
 
         {this.state.errorState ? (
           <ChartPlaceHolder
@@ -327,7 +329,7 @@ let DataSeries = React.createClass({
           width={width}
           height={height}
         />
-        //<AxisLabel className="x-label" x={width / 2} y={height + margin.top * 2/3} labelText={xLabelText} />
+        <AxisLabel className="x-label" x={width / 2} y={height + margin.top + margin.bottom * 0.5} labelText={xLabelText} />
         <AxisLabel className="y-label" x={0 - height / 2} y={0 - margin.left / 2} transform="rotate(-90)" labelText={yLabelText} />
         <rect
           className="overlay"
@@ -364,7 +366,7 @@ let ChemicalInput = React.createClass({
 
   render: function () {
     return (
-      <div>
+      <div className="chem-input">
         <h4>{this.props.title}</h4>
         <input
           id={this.props.idName}

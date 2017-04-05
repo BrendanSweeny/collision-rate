@@ -1,0 +1,71 @@
+/* Defines the styles of the individual sliders */
+
+/* Removes Default Slider 'track' appearance */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 95%;
+  display: block;
+  background: transparent;
+  margin-top: 10px;
+}
+
+/* Hides slider for IE for IE */
+input[type=range]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  /* Remove slider 'thumb' */
+  -webkit-appearance: none;
+
+  /* Custom Slider Thumb Styles */
+  border: 2px solid black;
+  border-radius: 5px;
+  background: white;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px black;
+  margin-top: -8px;
+}
+
+input[type=range]::-moz-range-thumb {
+  /* Custom Slider Thumb Styles */
+  border: 2px solid black;
+  border-radius: 5px;
+  background: white;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px black;
+}
+
+input[type=range]::-ms-thumb {
+  /* Custom Slider Thumb Styles */
+  border: 2px solid black;
+  border-radius: 5px;
+  background: white;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px black;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 20%;
+  height: 7px;
+  cursor: pointer;
+  box-shadow: 1px 1px 1px black;
+  background: grey;
+  border-radius: 2px;
+}
+
+/* Removes blue highlight border */
+input[type=range]:focus {
+  outline: none;
+}
