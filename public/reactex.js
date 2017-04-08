@@ -13,6 +13,8 @@ let RateAxis = require('./components/RateAxis.Component.js');
 let Focus = require('./components/Focus.Component.js');
 let Line = require('./components/Line.Component.js');
 
+
+// Container Class responsible for maintaining state of chart and inputs
 let RatePlotContainer = React.createClass({
   getInitialState: function () {
 
@@ -36,6 +38,9 @@ let RatePlotContainer = React.createClass({
     }
   },
 
+  // Internal function that handles API call
+  // Called in findParamsApiCall() and findNeutralApiCall()
+  // link: string
   getRates: function (link) {
     var RateRequest = new Request(link);
     return fetch(RateRequest, {method: 'get'})
@@ -48,10 +53,13 @@ let RatePlotContainer = React.createClass({
         return res.json();
       })
       .catch((error) => {
-        //console.log("There was an issue with the fetch operation: " + error.message);
+        console.log("There was an issue with the fetch operation: " + error.message);
       })
   },
 
+  // Internal function that handles the API response
+  // data: JSON object received from server
+  // newState: object
   handleAPIResponse: function (data, newState) {
     if (!newState) {
       newState = {};
@@ -81,12 +89,22 @@ let RatePlotContainer = React.createClass({
     }
   },
 
+  // Function that creates URL and calls getRates based on updated
+  // chemical parameters and RatePlotContainer state
+  // Called by handleUpdateParam()
+  //  ionMass: Number
+  //  neutralMass: Number
+  //  d (dipole moment): Number
+  //  pol (polarizability): Number
   findParamsApiCall: function (ionMass, neutralMass, d, pol) {
     let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
     this.getRates(url)
         .then((data) => this.handleAPIResponse(data));
   },
 
+  // Function that creates URL and calls getRates based on either a known neutral or ion mass
+  //  val: Number or String
+  //  valType: specific String
   findNeutralApiCall: function (val, valType) {
     let newState = {};
     if (valType === "ion") {
@@ -101,7 +119,7 @@ let RatePlotContainer = React.createClass({
         .then((data) => this.handleAPIResponse(data, newState));
   },
 
-  // Function called to prepare API call when neutral name is known
+  // Function passed as props to neutral and ion text inputs
   handleUpdateIonNeutral: function (e) {
     if (e.target.id === "ion-input") {
       let ionMass = e.target.value;
@@ -112,7 +130,7 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  // Function called to prepare API call when individual parameters are changed
+  // Function passed as props to the sliders
   handleUpdateParam: function (e) {
     //console.log(e.target.className);
     if (e.target.className === "neutralMass") {
@@ -130,27 +148,10 @@ let RatePlotContainer = React.createClass({
     }
   },
 
+  // Plot and values for Ti+ and N2O are retrieved prior to mounting
   componentWillMount: function () {
     this.getRates(window.location.origin + '/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
-      .then(function(data) {
-        //console.log("<RatePlotContainer />: componentWillMount", data);
-        let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
-        let yExtent = d3.extent(data.rates, (d) => { return d.rate; })
-        //console.log("<RatePlotContainer />: componentWillMount", xExtent, yExtent);
-        // Expand the y extent
-        yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
-        yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
-
-        this.setState({
-          data: data.rates,
-          xDomain: xExtent,
-          yDomain: yExtent,
-          ionMass: data.ionMass,
-          neutralMass: data.neutralMass,
-          dipoleMoment: data.dipoleMoment,
-          polarizability: data.polarizability,
-        });
-      }.bind(this));
+      .then((data) => this.handleAPIResponse(data));
   },
 
   render: function () {
