@@ -1,3 +1,6 @@
+// TODO: Add legend with parameters that created displayed data
+// TODO: style chart better, e.g. bold axis tick marks
+// TODO: Reformat tooltip rate
 
 // Packages
 let React = require('react');
