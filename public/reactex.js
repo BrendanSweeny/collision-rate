@@ -16,6 +16,8 @@ let Line = require('./components/Line.Component.js');
 
 // Container Class responsible for maintaining state of chart and inputs
 let RatePlotContainer = React.createClass({
+  // State is used to construct API call when params/neutral/ion are updated
+  // State values are also passed to the parameter sliders
   getInitialState: function () {
 
     const margin = {top: 10, right: 150, bottom: 50, left: 150},
@@ -52,12 +54,9 @@ let RatePlotContainer = React.createClass({
         }
         return res.json();
       })
-      .catch((error) => {
-        console.log("There was an issue with the fetch operation: " + error.message);
-      })
   },
 
-  // Internal function that handles the API response
+  // Internal function that handles the API response and updates component state
   // data: JSON object received from server
   // newState: object
   handleAPIResponse: function (data, newState) {
@@ -97,12 +96,27 @@ let RatePlotContainer = React.createClass({
   //  d (dipole moment): Number
   //  pol (polarizability): Number
   findParamsApiCall: function (ionMass, neutralMass, d, pol) {
+    let newState = {};
     let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
+
     this.getRates(url)
-        .then((data) => this.handleAPIResponse(data));
+        .then((data) => this.handleAPIResponse(data, newState))
+        .catch((error) => {
+          console.log("There was an issue with the fetch operation: " + error.message);
+          // State is still updated in the event of a '404', otherwise inputs
+          // causing the error are not updated with empty string values,
+          // preventing user from entering values < 1
+          newState.errorState = true;
+          newState.ionMass = ionMass;
+          newState.neutralMass = neutralMass;
+          newState.dipoleMoment = d;
+          newState.polarizability = pol;
+          this.setState(newState);
+        });
   },
 
-  // Function that creates URL and calls getRates based on either a known neutral or ion mass
+  // Function that creates URL and calls getRates based on either a known neutral
+  // or ion mass update
   //  val: Number or String
   //  valType: specific String
   findNeutralApiCall: function (val, valType) {
@@ -116,10 +130,16 @@ let RatePlotContainer = React.createClass({
     }
 
     this.getRates(url)
-        .then((data) => this.handleAPIResponse(data, newState));
+        .then((data) => this.handleAPIResponse(data, newState))
+        .catch((error) => {
+          console.log("There was an issue with the fetch operation: " + error.message);
+          newState.errorState = true;
+          this.setState(newState);
+        });
   },
 
   // Function passed as props to neutral and ion text inputs
+  // Calls API handlers based on targeted input
   handleUpdateIonNeutral: function (e) {
     if (e.target.id === "ion-input") {
       let ionMass = e.target.value;
@@ -130,7 +150,8 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  // Function passed as props to the sliders
+  // Function passed as props to the sliders, handles value change
+  // Calls API handlers based on targeted input
   handleUpdateParam: function (e) {
     //console.log(e.target.className);
     if (e.target.className === "neutralMass") {
@@ -154,9 +175,10 @@ let RatePlotContainer = React.createClass({
       .then((data) => this.handleAPIResponse(data));
   },
 
+  // Renders chart or placeholder with error message based on state of 'errorState'
   render: function () {
     let { ionMass, neutralMass, neutralString, width, height, margin, data, xDomain, yDomain, dipoleMoment, polarizability } = this.state;
-    //console.log("<RatePlotContainer />: render", neutralMass);
+    //console.log("<RatePlotContainer />: render", ionMass);
     return (
       <div>
         <div className="chem-input-container">
@@ -204,6 +226,7 @@ let RatePlotContainer = React.createClass({
 });
 
 // Component containing the svg element
+// Renders <DataSeries /> based on props from <RatePlotContainer />
 let LineChart = React.createClass({
   propTypes: {
     width: React.PropTypes.number,
@@ -250,6 +273,8 @@ let LineChart = React.createClass({
 });
 
 // Component containing the plot area
+// Renders D3 elements using a combination of DOM manipulation
+// by React and D3.js
 let DataSeries = React.createClass({
   propTypes: {
     data: React.PropTypes.array,
@@ -292,6 +317,7 @@ let DataSeries = React.createClass({
         // otherwise, assign right point to d
         d = x0 - d0.data > d1.data - x0 ? d1 : d0;
 
+        // Focus component is rendered using D3.js when updated, not React
         focus.attr("transform", "translate(" + x(d.temp) + "," + y(d.rate) + ")");
         focus.select(".v-line").attr("y2", this.props.height - y(d.rate));
         focus.select(".h-line").attr("x2", 0 - x(d.temp));
@@ -307,6 +333,8 @@ let DataSeries = React.createClass({
     d3.select(".focus").style("display", "none");
   },
 
+  // Focus is initially rendered with 'display: none' by React
+  // Updates to Focus (on mousemove) are handled by D3.js
   render: function () {
     let { data, margin, interpolationType, x, y, height, width } = this.props;
 
@@ -345,11 +373,16 @@ let DataSeries = React.createClass({
   }
 });
 
+// Input components for ion and neutral
 let ChemicalInput = React.createClass({
   propTypes: {
     idName: React.PropTypes.string,
     title: React.PropTypes.string,
-    handleUpdateIonNeutral: React.PropTypes.func
+    handleUpdateIonNeutral: React.PropTypes.func,
+    defaultValue: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ])
   },
 
   getInitialState: function () {
@@ -363,6 +396,20 @@ let ChemicalInput = React.createClass({
       this.setState({
         value: e.target.value
       })
+  },
+
+  // Allows input value to update when value of HorizontalSlider is changed
+  componentWillReceiveProps: function (nextProps) {
+
+    // nextProps.defaultValue of null throws React controlled/uncontrolled error
+    // Allows for some'invalid' inputs e.g. '1.'
+    // Will not update state (string) when props = 1 and state.value = '1.'
+    // if component is allowed to update when props.value === '.' => React uncontrolled/controlled component error
+    if (nextProps.defaultValue && nextProps.defaultValue !== Number(this.state.value)) {
+      this.setState({
+        value: nextProps.defaultValue
+      })
+    }
   },
 
   render: function () {

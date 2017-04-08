@@ -1,32 +1,68 @@
-// TODO: dipole moment slider will not go to zero or allow empty strings for some reason
-// TODO: cannot input floats < 1 in text boxes
-
 'use strict';
 
 let React = require('react');
 let formatSuperscript = require('../utils/formatSuperscript');
 let validateNumber = require('../utils/validateNumber')
 
+// Renders a group of horizontal slider and text inputs
+// for the reaction rate parameters based on props
 let SliderContainer = React.createClass({
   propTypes: {
-    neutralMass: React.PropTypes.number,
-    ionMass: React.PropTypes.number,
-    polarizability: React.PropTypes.number,
-    dipoleMoment: React.PropTypes.number,
+    neutralMass: React.PropTypes.oneOfType([
+      // When an empty string from an empty input is passed:
+      React.PropTypes.string,
+      React.PropTypes.number
+    ]),
+    ionMass: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ]),
+    polarizability: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ]),
+    dipoleMoment: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ]),
     handleUpdateParam: React.PropTypes.func
   },
 
   render: function () {
     let { neutralMass, ionMass, polarizability, dipoleMoment, handleUpdateParam } = this.props;
 
-    console.log("<SliderContainer /> render: ", neutralMass);
+    //console.log("<SliderContainer /> render: ", neutralMass);
 
     return (
       <div className="slider-container">
-        <HorizontalSlider name="neutralMass" title="Neutral Mass (amu)" min={10} max={200} step={10} defaultValue={neutralMass} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="polarizability" title={"Polarizability (A^3)"} min={0.1} max={4} step={0.1} defaultValue={polarizability} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="dipoleMoment" title="Dipole Moment (D)" min={0.1} max={2} step={0.1} defaultValue={dipoleMoment} handleUpdateParam={handleUpdateParam} />
-        <HorizontalSlider name="ionMass" title="Ion Mass (amu)" min={1} max={300} step={5} defaultValue={ionMass} handleUpdateParam={handleUpdateParam} />
+        <HorizontalSlider name="neutralMass" title="Neutral Mass (amu)"
+          min={10}
+          max={200}
+          step={10}
+          defaultValue={neutralMass}
+          handleUpdateParam={handleUpdateParam}
+        />
+        <HorizontalSlider name="polarizability" title={"Polarizability (A^3)"}
+          min={0.1}
+          max={4}
+          step={0.1}
+          defaultValue={polarizability}
+          handleUpdateParam={handleUpdateParam}
+        />
+        <HorizontalSlider name="dipoleMoment" title="Dipole Moment (D)"
+          min={0}
+          max={2}
+          step={0.1}
+          defaultValue={dipoleMoment}
+          handleUpdateParam={handleUpdateParam}
+        />
+        <HorizontalSlider name="ionMass" title="Ion Mass (amu)"
+          min={1}
+          max={300}
+          step={5}
+          defaultValue={ionMass}
+          handleUpdateParam={handleUpdateParam}
+        />
       </div>
     )
   }
@@ -42,13 +78,16 @@ let HorizontalSlider = React.createClass({
     max: React.PropTypes.number,
     min: React.PropTypes.number,
     step: React.PropTypes.number,
-    defaultValue: React.PropTypes.number,
+    defaultValue: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.number
+    ]),
     name: React.PropTypes.string
   },
 
   // Uses first props as state
   getInitialState: function () {
-    console.log("<Slider /> getInitialState", this.props.defaultValue);
+    //console.log("<Slider /> getInitialState", this.props.defaultValue);
     return {
       value: this.props.defaultValue ? this.props.defaultValue : 50
     }
@@ -79,14 +118,14 @@ let HorizontalSlider = React.createClass({
   },
 
   componentWillReceiveProps: function (nextProps) {
-    console.log("<Slider /> componentWillReceiveProps", this.props.defaultValue);
+    //console.log("<Slider /> componentWillReceiveProps", nextProps.defaultValue);
 
+    // nextProps.defaultValue of null throws React controlled/uncontrolled error
     // Allows for some'invalid' inputs e.g. '1.'
     // Will not update state (string) when props = 1 and state.value = '1.'
-    // Will not update state if state.value is an empty string to allow for input of floats < 1
     // if component is allowed to update when props.value === '.' => React uncontrolled/controlled component error
-    if (nextProps.defaultValue !== Number(this.state.value) && this.state.value !== '' && this.state.value !== '.') {
-      console.log("<Slider /> componentWillReceiveProps UPDATED");
+    if (nextProps.defaultValue && nextProps.defaultValue !== Number(this.state.value)/* && this.state.value !== '' && this.state.value !== '.'*/) {
+      //console.log("<Slider /> componentWillReceiveProps UPDATED");
       this.setState({
         value: nextProps.defaultValue
       })
@@ -94,7 +133,7 @@ let HorizontalSlider = React.createClass({
   },
 
   render: function () {
-    console.log("<Slider /> render", " state.value: ", this.state.value, this.props.defaultValue);
+    //console.log("<Slider /> render", " state.value: ", this.state.value, this.props.defaultValue);
     let { title, max, min, step, defaultValue, name, handleUpdateParam } = this.props
     title = formatSuperscript(title, "html");
     //console.log(defaultValue, this.state.value);

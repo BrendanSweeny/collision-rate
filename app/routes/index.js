@@ -1,3 +1,5 @@
+// TODO: Pass errors as json, change client to present the errors
+
 'use strict';
 
 let CollisionRateHandler = require(process.cwd() + "/app/controllers/CollisionRateHandler.server.js");
@@ -18,9 +20,9 @@ module.exports = (app) => {
     let neutral = req.query.neutral;
     let ionMass = req.query.ionmass;
 
-    if (!ionMass || !neutral || neutralsJSON[neutral] === undefined) {
+    if (!Number(ionMass) || !neutral || neutralsJSON[neutral] === undefined || Number(ionMass) === 0) {
       console.log("Not Found: No ion mass or neutral specified or neutral not found.");
-      res.status(404).send(res.statusCode + " Not Found: No ion mass or neutral specified or neutral not found.");
+      res.status(404).send(res.statusCode + " Not Found. No ion mass or neutral specified or neutral not found.");
     } else if (temp === "range" && format === "csv") {
       res.status(200).send("format csv");
     } else if (temp === "range") {
@@ -39,9 +41,9 @@ module.exports = (app) => {
     let dipoleMoment = req.query.d;
     let polarizability = req.query.pol;
 
-    if (!ionMass || !nMass || !dipoleMoment || !polarizability) {
+    if (!Number(ionMass) || !Number(nMass) || !dipoleMoment || !Number(polarizability)) {
       console.log("Query is missing values.");
-      res.status(404).send(res.statusCode + " Query is missing values.");
+      res.status(404).send(res.statusCode + " Not Found. Query is missing values.");
     } else if (temp === "range" && format === "csv") {
       res.status(200).send("format csv");
     } else if (temp === "range") {
