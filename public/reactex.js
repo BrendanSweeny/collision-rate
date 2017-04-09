@@ -15,6 +15,7 @@ let TempAxis = require('./components/TempAxis.Component.js');
 let RateAxis = require('./components/RateAxis.Component.js');
 let Focus = require('./components/Focus.Component.js');
 let Line = require('./components/Line.Component.js');
+let Legend = require('./components/Legend.Component.js');
 
 
 // Container Class responsible for maintaining state of chart and inputs
@@ -214,6 +215,10 @@ let RatePlotContainer = React.createClass({
             data={data}
             xDomain={xDomain}
             yDomain={yDomain}
+            ionMass={ionMass}
+            neutralMass={neutralMass}
+            dipoleMoment={dipoleMoment}
+            polarizability={polarizability}
           />
         )}
         <SliderContainer
@@ -234,6 +239,10 @@ let LineChart = React.createClass({
   propTypes: {
     width: React.PropTypes.number,
     height: React.PropTypes.number,
+    neutralMass: React.PropTypes.number,
+    ionMass: React.PropTypes.number,
+    dipoleMoment: React.PropTypes.number,
+    polarizability: React.PropTypes.number,
     margin: React.PropTypes.object,
     data: React.PropTypes.array.isRequired,
     xDomain: React.PropTypes.array,
@@ -248,7 +257,7 @@ let LineChart = React.createClass({
   },
 
   render: function () {
-    let { width, height, margin, data, xDomain, yDomain } = this.props;
+    let { width, height, margin, data, xDomain, yDomain, ionMass, neutralMass, dipoleMoment, polarizability } = this.props;
 
     let x = d3.scaleLinear()
               .domain(xDomain)
@@ -269,6 +278,29 @@ let LineChart = React.createClass({
           width={width}
           height={height}
           margin={margin}
+        />
+        <Legend
+          width={width}
+          height={height}
+          margin={margin}
+          valueObj={[
+            {
+              "name": "Ion Mass",
+              "value": ionMass
+            },
+            {
+              "name": "Neutral Mass",
+              "value": neutralMass
+            },
+            {
+              "name": "Dipole Moment",
+              "value": dipoleMoment
+            },
+            {
+              "name": "Polarizability",
+              "value": polarizability
+            }
+          ]}
         />
       </svg>
     );
@@ -303,6 +335,19 @@ let DataSeries = React.createClass({
   },
 
   handleMouseMove: function () {
+
+    function reformatSciNotation (d, i) {
+      d = d.toExponential(2);
+      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$1x10");
+      return d;
+    }
+
+    function addExponent (d, i) {
+      d = d.toExponential(2);
+      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$2");
+      return d;
+    }
+
     let { data, x, y } = this.props;
     let focus = d3.select(".focus");
     let overlay = d3.select(".overlay").node();
@@ -325,7 +370,7 @@ let DataSeries = React.createClass({
         focus.select(".v-line").attr("y2", this.props.height - y(d.rate));
         focus.select(".h-line").attr("x2", 0 - x(d.temp));
         focus.select(".text-temp").text("T: " + d.temp);
-        focus.select(".text-rate").text("Rate: " + d.rate.toPrecision(3));
+        focus.select(".text-rate").text("Rate: " + reformatSciNotation(d.rate)).append("tspan").attr("dy", "-.5em").text(addExponent(d.rate));
   },
 
   handleMouseOver: function () {

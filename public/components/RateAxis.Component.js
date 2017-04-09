@@ -20,15 +20,16 @@ let RateAxis = React.createClass({
 
     function reformatSciNotation (d, i) {
       d = d.toExponential(2);
-      d = d.toString().replace(/(\d+.?\d*)e\+?(-?\d+)/, "$1x10");
+      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$1x10");
       return d;
     }
 
     function addExponent (d, i) {
-      d = d.toExponential(4);
-      d = d.toString().replace(/(\d+.?\d*)e\+?(-?\d+)/, "$2");
+      d = d.toExponential(2);
+      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$2");
       return d;
     }
+
     // Old format that renders "1.23e-9"
     let customFormat = d3.format(".3g");
 
@@ -44,7 +45,7 @@ let RateAxis = React.createClass({
       // Replaces with new format
       .text(reformatSciNotation)
       .append("tspan")
-      .attr("dy", "-.7em")
+      .attr("dy", "-.5em")
       .text(addExponent);
   },
 
