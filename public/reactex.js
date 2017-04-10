@@ -1,6 +1,5 @@
-// TODO: Add legend with parameters that created displayed data
 // TODO: style chart better, e.g. bold axis tick marks
-// TODO: Reformat tooltip rate
+// TODO: move most children from DataSeries to LineChart if possible
 
 // Packages
 let React = require('react');
@@ -406,8 +405,8 @@ let DataSeries = React.createClass({
           width={width}
           height={height}
         />
-        <AxisLabel className="x-label" x={width / 2} y={height + margin.top + margin.bottom * 0.5} labelText={xLabelText} />
-        <AxisLabel className="y-label" x={0 - height / 2} y={0 - margin.left / 2} transform="rotate(-90)" labelText={yLabelText} />
+        <AxisLabel className="x-label" x={width / 2} y={height + margin.top + margin.bottom * 0.7} labelText={xLabelText} />
+        <AxisLabel className="y-label" x={0 - height / 2} y={0 - margin.left * 3/4} transform="rotate(-90)" labelText={yLabelText} />
         <rect
           className="overlay"
           width={width}

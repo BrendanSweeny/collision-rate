@@ -2,6 +2,9 @@
 
 let React = require('react');
 
+// Renders a legend on the plot area with values passed as an array of objects
+// each with a name and value property
+// Called by LineChart
 let Legend = React.createClass({
   propTypes: {
     width: React.PropTypes.number,
@@ -17,7 +20,6 @@ let Legend = React.createClass({
     return (
       <text className="text legend">
         {valueObj.map((obj, index) => {
-          console.log(obj, index, x, y);
           return <tspan className="legend-entry" x={x} y={y} dy={(1.2 * index).toString() + "em"}>{obj.name + ": " + obj.value}</tspan>
         })}
       </text>

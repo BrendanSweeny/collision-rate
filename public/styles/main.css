@@ -47,7 +47,7 @@ input {
   justify-content: center;
 }
 
-/* Workaround for superscript alignment issues */
-sup {
-  vertical-align: top;
+.tick {
+  font-size: 1.5em;
+  font-weight: bold;
 }
