@@ -1,5 +1,5 @@
-// TODO: style chart better, e.g. bold axis tick marks
 // TODO: move most children from DataSeries to LineChart if possible
+// TODO: Make chart placeholder more instructive
 
 // Packages
 let React = require('react');
@@ -15,6 +15,7 @@ let RateAxis = require('./components/RateAxis.Component.js');
 let Focus = require('./components/Focus.Component.js');
 let Line = require('./components/Line.Component.js');
 let Legend = require('./components/Legend.Component.js');
+let RateCSV = require('./components/RateCSV.Component.js');
 
 
 // Container Class responsible for maintaining state of chart and inputs
@@ -39,7 +40,20 @@ let RatePlotContainer = React.createClass({
       xDomain: [],
       yDomain: [],
       data: [],
-      errorState: false
+      errorState: false,
+      tabulate: false
+    }
+  },
+
+  toggleTabulate: function () {
+    if (this.state.tabulate) {
+      this.setState({
+        tabulate: false
+      });
+    } else {
+      this.setState({
+        tabulate: true
+      });
     }
   },
 
@@ -180,14 +194,39 @@ let RatePlotContainer = React.createClass({
 
   // Renders chart or placeholder with error message based on state of 'errorState'
   render: function () {
-    let { ionMass, neutralMass, neutralString, width, height, margin, data, xDomain, yDomain, dipoleMoment, polarizability } = this.state;
+    let { ionMass, neutralMass, neutralString, width, height, margin, data, xDomain, yDomain, dipoleMoment, polarizability, tabulate } = this.state;
     //console.log("<RatePlotContainer />: render", ionMass);
+
+    // Displays data in LineChart or CSV (toggled using button)
+    let display;
+    if (tabulate === false) {
+      display = <LineChart
+                  width={width}
+                  height={height}
+                  margin={margin}
+                  data={data}
+                  xDomain={xDomain}
+                  yDomain={yDomain}
+                  ionMass={ionMass}
+                  neutralMass={neutralMass}
+                  dipoleMoment={dipoleMoment}
+                  polarizability={polarizability}
+                />
+    } else {
+      display = <RateCSV
+                  width={width}
+                  height={height}
+                  margin={margin}
+                  data={data}
+                />
+    }
+
     return (
       <div>
         <div className="chem-input-container">
           <ChemicalInput
             idName="ion-input"
-            title="Ion"
+            title="Ion Mass"
             defaultValue={ionMass}
             handleUpdateIonNeutral={this.handleUpdateIonNeutral}
           />
@@ -197,6 +236,9 @@ let RatePlotContainer = React.createClass({
             defaultValue={neutralString}
             handleUpdateIonNeutral={this.handleUpdateIonNeutral}
           />
+          <div style={{'position': 'relative'}}>
+            <button className="tabulate-btn" onClick={this.toggleTabulate}>Tabulate</button>
+          </div>
         </div>
 
         {this.state.errorState ? (
@@ -204,21 +246,11 @@ let RatePlotContainer = React.createClass({
             width={width}
             height={height}
             margin={margin}
-            message="Enter Valid Ion and Neutral"
+            message={["Empty ion/neutral input or neutral not found.", "", "You might try some of these neutral molecules:", "", "H2O", "N2O", "O2", "CO2", "H2", "etc..."]}
+            textAnchor="left"
           />
         ) : (
-          <LineChart
-            width={width}
-            height={height}
-            margin={margin}
-            data={data}
-            xDomain={xDomain}
-            yDomain={yDomain}
-            ionMass={ionMass}
-            neutralMass={neutralMass}
-            dipoleMoment={dipoleMoment}
-            polarizability={polarizability}
-          />
+          display
         )}
         <SliderContainer
           neutralMass={neutralMass}
@@ -238,8 +270,14 @@ let LineChart = React.createClass({
   propTypes: {
     width: React.PropTypes.number,
     height: React.PropTypes.number,
-    neutralMass: React.PropTypes.number,
-    ionMass: React.PropTypes.number,
+    neutralMass: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]),
+    ionMass: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]),
     dipoleMoment: React.PropTypes.number,
     polarizability: React.PropTypes.number,
     margin: React.PropTypes.object,

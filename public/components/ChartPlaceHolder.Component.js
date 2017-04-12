@@ -9,7 +9,10 @@ let ChartPlaceHolder = React.createClass({
     height: React.PropTypes.number,
     margin: React.PropTypes.object,
     textAnchor: React.PropTypes.string,
-    message: React.PropTypes.string
+    message: React.PropTypes.oneOfType([
+      React.PropTypes.string,
+      React.PropTypes.array
+    ])
   },
 
   getDefaultProps: function () {
@@ -27,7 +30,12 @@ let ChartPlaceHolder = React.createClass({
             width={width}
             height={height}
           />
-          <text textAnchor={textAnchor} x={width / 2} y={height / 2} dangerouslySetInnerHTML={{__html: message}} />
+          {typeof message === "string"
+            ? <text textAnchor={textAnchor} x={width / 20} y={height / 10} dangerouslySetInnerHTML={{__html: message}} />
+            : message.map((line, index) => {
+              return <text textAnchor={textAnchor} x={width / 20} y={height / 10} dy={(index * 1.2).toString() + "em"} dangerouslySetInnerHTML={{__html: line}} />;
+            })
+          }
         </g>
       </svg>
     )
