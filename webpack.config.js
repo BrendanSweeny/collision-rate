@@ -7,11 +7,11 @@ let HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
 
 module.exports = {
   entry: [
-    './public/reactex.js'
+    './public/scripts.js'
   ],
   output: {
     path: __dirname + '/dist',
-    filename: "reactex.js"
+    filename: "scripts.js"
   },
   module: {
     loaders: [
