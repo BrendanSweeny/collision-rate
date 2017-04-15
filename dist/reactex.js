@@ -10166,26 +10166,6 @@ ReactDOM.render(React.createElement(RatePlotContainer, null), document.getElemen
 /***/ (function(module, exports) {
 
 module.exports = {
-	"N2O": {
-		"mass": 44,
-		"polarizability": 3.03,
-		"dipoleMoment": 0.161
-	},
-	"O2": {
-		"mass": 32,
-		"polarizability": 1.12,
-		"dipoleMoment": 0
-	},
-	"H2O": {
-		"mass": 18,
-		"polarizability": 1.45,
-		"dipoleMoment": 1.85
-	},
-	"CO": {
-		"mass": 28,
-		"polarizability": 2.91,
-		"dipoleMoment": 0
-	},
 	"H": {
 		"mass": 1,
 		"polarizability": 0.667,
@@ -10196,20 +10176,265 @@ module.exports = {
 		"polarizability": 0.205,
 		"dipoleMoment": 0
 	},
+	"N": {
+		"mass": 14,
+		"polarizability": 1.1,
+		"dipoleMoment": 0
+	},
+	"O": {
+		"mass": 16,
+		"polarizability": 0.802,
+		"dipoleMoment": 0
+	},
+	"F": {
+		"mass": 19,
+		"polarizability": 0.557,
+		"dipoleMoment": 0
+	},
+	"Ne": {
+		"mass": 20,
+		"polarizability": 0.396,
+		"dipoleMoment": 0
+	},
+	"Ar": {
+		"mass": 40,
+		"polarizability": 1.64,
+		"dipoleMoment": 0
+	},
+	"H2": {
+		"mass": 2,
+		"polarizability": 0.802,
+		"dipoleMoment": 0
+	},
+	"D2": {
+		"mass": 4,
+		"polarizability": 0.795,
+		"dipoleMoment": 0
+	},
+	"HD": {
+		"mass": 3,
+		"polarizability": 0.798,
+		"dipoleMoment": 0
+	},
+	"O2": {
+		"mass": 32,
+		"polarizability": 1.58,
+		"dipoleMoment": 0
+	},
+	"O3": {
+		"mass": 48,
+		"polarizability": 3.21,
+		"dipoleMoment": 0.533
+	},
+	"N2": {
+		"mass": 28,
+		"polarizability": 1.74,
+		"dipoleMoment": 0
+	},
+	"NO": {
+		"mass": 30,
+		"polarizability": 1.7,
+		"dipoleMoment": 0.159
+	},
+	"N2O": {
+		"mass": 44,
+		"polarizability": 3.03,
+		"dipoleMoment": 0.161
+	},
+	"NO2": {
+		"mass": 46,
+		"polarizability": 3.02,
+		"dipoleMoment": 0.316
+	},
+	"SO2": {
+		"mass": 64,
+		"polarizability": 3.9,
+		"dipoleMoment": 1.63
+	},
+	"Cl2": {
+		"mass": 71,
+		"polarizability": 4.61,
+		"dipoleMoment": 0
+	},
+	"HCl": {
+		"mass": 36.5,
+		"polarizability": 2.515,
+		"dipoleMoment": 1.08
+	},
+	"F2": {
+		"mass": 38,
+		"polarizability": 1.38,
+		"dipoleMoment": 0
+	},
+	"CO": {
+		"mass": 28,
+		"polarizability": 1.95,
+		"dipoleMoment": 0.11
+	},
 	"CO2": {
 		"mass": 44,
 		"polarizability": 2.507,
 		"dipoleMoment": 0
+	},
+	"COS": {
+		"mass": 60,
+		"polarizability": 5.09,
+		"dipoleMoment": 0.712
+	},
+	"H2O": {
+		"mass": 18,
+		"polarizability": 1.45,
+		"dipoleMoment": 1.85
+	},
+	"D2O": {
+		"mass": 20,
+		"polarizability": 1.26,
+		"dipoleMoment": 1.85
+	},
+	"H2S": {
+		"mass": 34,
+		"polarizability": 3.9,
+		"dipoleMoment": 0.978
+	},
+	"HCN": {
+		"mass": 27,
+		"polarizability": 2.5,
+		"dipoleMoment": 3
 	},
 	"NH3": {
 		"mass": 17,
 		"polarizability": 2.2,
 		"dipoleMoment": 1.47
 	},
-	"H2": {
-		"mass": 2,
-		"polarizability": 0.802,
+	"SF6": {
+		"mass": 146,
+		"polarizability": 6.54,
 		"dipoleMoment": 0
+	},
+	"SF4": {
+		"mass": 108,
+		"polarizability": 8,
+		"dipoleMoment": 0.632
+	},
+	"CCl4": {
+		"mass": 152,
+		"polarizability": 10.8,
+		"dipoleMoment": 0
+	},
+	"CH3Cl": {
+		"mass": 50.5,
+		"polarizability": 4.41,
+		"dipoleMoment": 1.87
+	},
+	"CH3I": {
+		"mass": 142,
+		"polarizability": 7.325,
+		"dipoleMoment": 1.62
+	},
+	"CH4": {
+		"mass": 16,
+		"polarizability": 2.59,
+		"dipoleMoment": 0
+	},
+	"C2H2": {
+		"mass": 26,
+		"polarizability": 3.6,
+		"dipoleMoment": 0
+	},
+	"C2H4": {
+		"mass": 28,
+		"polarizability": 4.252,
+		"dipoleMoment": 0
+	},
+	"C2H6": {
+		"mass": 30,
+		"polarizability": 4.45,
+		"dipoleMoment": 0
+	},
+	"C3H8": {
+		"mass": 44,
+		"polarizability": 6.3,
+		"dipoleMoment": 0.08
+	},
+	"C6H6": {
+		"mass": 78,
+		"polarizability": 10.4,
+		"dipoleMoment": 0
+	},
+	"C10H8": {
+		"mass": 128,
+		"polarizability": 17,
+		"dipoleMoment": 0
+	},
+	"CH3OH": {
+		"mass": 32,
+		"polarizability": 3.29,
+		"dipoleMoment": 1.7
+	},
+	"(CH3)2CO": {
+		"mass": 58,
+		"polarizability": 6.36,
+		"dipoleMoment": 2.88
+	},
+	"CH3": {
+		"mass": 15,
+		"polarizability": 2.3,
+		"dipoleMoment": 0
+	},
+	"C2H5": {
+		"mass": 29,
+		"polarizability": 4,
+		"dipoleMoment": 0.3
+	},
+	"CF3": {
+		"mass": 69,
+		"polarizability": 2.5,
+		"dipoleMoment": 0.3
+	},
+	"CH3OCH3": {
+		"mass": 46,
+		"polarizability": 5.29,
+		"dipoleMoment": 1.3
+	},
+	"CF3I": {
+		"mass": 196,
+		"polarizability": 10,
+		"dipoleMoment": 1.05
+	},
+	"I": {
+		"mass": 127,
+		"polarizability": 5.35,
+		"dipoleMoment": 0
+	},
+	"Cl": {
+		"mass": 35.5,
+		"polarizability": 2.18,
+		"dipoleMoment": 0
+	},
+	"Br": {
+		"mass": 80,
+		"polarizability": 3.05,
+		"dipoleMoment": 0
+	},
+	"Kr": {
+		"mass": 83.8,
+		"polarizability": 2.48,
+		"dipoleMoment": 0
+	},
+	"Xe": {
+		"mass": 131,
+		"polarizability": 4.04,
+		"dipoleMoment": 0
+	},
+	"Sm": {
+		"mass": 150.4,
+		"polarizability": 28.8,
+		"dipoleMoment": 0
+	},
+	"CH3Br": {
+		"mass": 95,
+		"polarizability": 5.95,
+		"dipoleMoment": 1.82
 	}
 };
 
