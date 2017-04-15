@@ -6,6 +6,7 @@ let React = require('react');
 let ReactDOM = require('react-dom');
 
 let neutralsJSON = require("../neutrals.json");
+let CollisionRate = require("./utils/CollisionRate")
 
 // React Components
 let AxisLabel = require('./components/AxisLabel.Component.js');
@@ -47,6 +48,8 @@ let RatePlotContainer = React.createClass({
     }
   },
 
+  // Clickhandler function for tabulate button
+  // Changing state changes whether plot or table is displayed
   toggleTabulate: function () {
     if (this.state.tabulate) {
       this.setState({
@@ -86,22 +89,6 @@ let RatePlotContainer = React.createClass({
     return rate;
   },
 
-  // Internal function that handles API call
-  // Called in findParamsApiCall() and findNeutralApiCall()
-  // link: string
-  getRates: function (link) {
-    var RateRequest = new Request(link);
-    return fetch(RateRequest, {method: 'get'})
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Network error was encountered.");
-        } else if (res.status === 404) {
-          //console.log(404);
-        }
-        return res.json();
-      })
-  },
-
   newNeutralRates: function (ionMass, neutralQuery) {
     let initialTemp = 100;
     let finalTemp = 700;
@@ -116,25 +103,7 @@ let RatePlotContainer = React.createClass({
     let pol = neutral.polarizability;
     let d = neutral.dipoleMoment;
 
-    let kL = this.langevinRate(neutralMass, ionMass, pol);
-
-    let rateArray = [];
-
-    for (let t = initialTemp; t <= finalTemp; t++) {
-      let tau = this.findTau(d, t, pol);
-      let collRate = this.kSC_Over_kL(tau) * kL;
-
-      rateArray.push({"temp": t, "rate": collRate});
-    }
-
-    let outputJSON = {
-      "ionMass": ionMass,
-      "neutralName": neutralQuery,
-      "neutralMass": neutralMass,
-      "dipoleMoment": d,
-      "polarizability": pol,
-      "rates": rateArray
-    };
+    let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
 
     return outputJSON;
   },
@@ -147,24 +116,7 @@ let RatePlotContainer = React.createClass({
     d = Number(d);
     pol = Number(pol);
 
-    let kL = this.langevinRate(neutralMass, ionMass, pol);
-
-    let rateArray = []
-
-    for (let t = initialTemp; t <= finalTemp; t++) {
-      let tau = this.findTau(d, t, pol);
-      let collRate = this.kSC_Over_kL(tau) * kL;
-
-      rateArray.push({"temp": t, "rate": collRate});
-    }
-
-    let outputJSON = {
-      "ionMass": ionMass,
-      "neutralMass": neutralMass,
-      "dipoleMoment": d,
-      "polarizability": pol,
-      "rates": rateArray
-    };
+    let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
 
     return outputJSON;
   },
@@ -201,107 +153,44 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  // Function that creates URL and calls getRates based on updated
-  // chemical parameters and RatePlotContainer state
-  // Called by handleUpdateParam()
-  //  ionMass: Number
-  //  neutralMass: Number
-  //  d (dipole moment): Number
-  //  pol (polarizability): Number
-  findParamsApiCall: function (ionMass, neutralMass, d, pol) {
-    let newState = {};
-    let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
-
-    // Client-Side handling
-    let data = this.newParamRates(ionMass, neutralMass, d, pol);
-    this.handleAPIResponse(data);
-
-
-    /*
-    this.getRates(url)
-        .then((data) => this.handleAPIResponse(data, newState))
-        .catch((error) => {
-          console.log("There was an issue with the fetch operation: " + error.message);
-          // State is still updated in the event of a '404', otherwise inputs
-          // causing the error are not updated with empty string values,
-          // preventing user from entering values < 1
-          newState.errorState = true;
-          newState.ionMass = ionMass;
-          newState.neutralMass = neutralMass;
-          newState.dipoleMoment = d;
-          newState.polarizability = pol;
-          this.setState(newState);
-        });
-        */
-  },
-
-  // Function that creates URL and calls getRates based on either a known neutral
-  // or ion mass update
-  //  val: Number or String
-  //  valType: specific String
-  findNeutralApiCall: function (val, valType) {
-    //console.log(val, valType)
-    let newState = {};
-    let data;
-
-    if (valType === "ion") {
-      url = window.location.origin + '/api/rate/findneutral?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
-      newState.ionMass = val;
-
-      // Client-Side Rendering
-      data = this.newNeutralRates(val, this.state.neutralString);
-
-    } else if (valType === "neutral") {
-      url = window.location.origin + '/api/rate/findneutral?neutral=' + val + '&temp=range&ionmass=' + this.state.ionMass;
-      newState.neutralString = val;
-
-      // Client-Side Rendering
-      data = this.newNeutralRates(this.state.ionMass, val);
-    }
-    //console.log(data);
-    this.handleAPIResponse(data, newState);
-
-
-    /*
-    this.getRates(url)
-        .then((data) => this.handleAPIResponse(data, newState))
-        .catch((error) => {
-          console.log("There was an issue with the fetch operation: " + error.message);
-          newState.errorState = true;
-          this.setState(newState);
-        });
-        */
-  },
-
   // Function passed as props to neutral and ion text inputs
   // Calls API handlers based on targeted input
   handleUpdateIonNeutral: function (e) {
+    let data;
+    let newState = {};
     if (e.target.id === "ion-input") {
       let ionMass = e.target.value;
-      this.findNeutralApiCall(ionMass, "ion");
+      //this.findNeutralApiCall(ionMass, "ion");
+      data = this.newNeutralRates(ionMass, this.state.neutralString);
     } else if (e.target.id === "neutral-input") {
       let neutralString = e.target.value;
-      this.findNeutralApiCall(neutralString, "neutral")
+      newState.neutralString = neutralString;
+      //this.findNeutralApiCall(neutralString, "neutral");
+      data = this.newNeutralRates(this.state.ionMass, neutralString);
     }
+    this.handleAPIResponse(data, newState);
   },
 
   // Function passed as props to the sliders, handles value change
   // Calls API handlers based on targeted input
   handleUpdateParam: function (e) {
     //console.log(e.target.className);
+    let data;
     if (e.target.className === "neutralMass") {
       let neutralMass = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, neutralMass, this.state.dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(this.state.ionMass, neutralMass, this.state.dipoleMoment, this.state.polarizability);
     } else if (e.target.className === "ionMass") {
       let ionMass = e.target.value;
-      this.findParamsApiCall(ionMass, this.state.neutralMass, this.state.dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(ionMass, this.state.neutralMass, this.state.dipoleMoment, this.state.polarizability);
     } else if (e.target.className === "polarizability") {
       let polarizability = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, this.state.neutralMass, this.state.dipoleMoment, polarizability);
+      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, this.state.dipoleMoment, polarizability);
     } else if (e.target.className === "dipoleMoment") {
       let dipoleMoment = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, this.state.neutralMass, dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, dipoleMoment, this.state.polarizability);
     }
+
+    this.handleAPIResponse(data);
   },
 
   // Plot and values for Ti+ and N2O are retrieved prior to mounting

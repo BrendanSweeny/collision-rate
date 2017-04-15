@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 191);
+/******/ 	return __webpack_require__(__webpack_require__.s = 192);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -9529,6 +9529,7 @@ let React = __webpack_require__(10);
 let ReactDOM = __webpack_require__(98);
 
 let neutralsJSON = __webpack_require__(83);
+let CollisionRate = __webpack_require__(190);
 
 // React Components
 let AxisLabel = __webpack_require__(181);
@@ -9571,6 +9572,8 @@ let RatePlotContainer = React.createClass({
     };
   },
 
+  // Clickhandler function for tabulate button
+  // Changing state changes whether plot or table is displayed
   toggleTabulate: function () {
     if (this.state.tabulate) {
       this.setState({
@@ -9610,21 +9613,6 @@ let RatePlotContainer = React.createClass({
     return rate;
   },
 
-  // Internal function that handles API call
-  // Called in findParamsApiCall() and findNeutralApiCall()
-  // link: string
-  getRates: function (link) {
-    var RateRequest = new Request(link);
-    return fetch(RateRequest, { method: 'get' }).then(res => {
-      if (!res.ok) {
-        throw new Error("Network error was encountered.");
-      } else if (res.status === 404) {
-        //console.log(404);
-      }
-      return res.json();
-    });
-  },
-
   newNeutralRates: function (ionMass, neutralQuery) {
     let initialTemp = 100;
     let finalTemp = 700;
@@ -9639,25 +9627,7 @@ let RatePlotContainer = React.createClass({
     let pol = neutral.polarizability;
     let d = neutral.dipoleMoment;
 
-    let kL = this.langevinRate(neutralMass, ionMass, pol);
-
-    let rateArray = [];
-
-    for (let t = initialTemp; t <= finalTemp; t++) {
-      let tau = this.findTau(d, t, pol);
-      let collRate = this.kSC_Over_kL(tau) * kL;
-
-      rateArray.push({ "temp": t, "rate": collRate });
-    }
-
-    let outputJSON = {
-      "ionMass": ionMass,
-      "neutralName": neutralQuery,
-      "neutralMass": neutralMass,
-      "dipoleMoment": d,
-      "polarizability": pol,
-      "rates": rateArray
-    };
+    let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
 
     return outputJSON;
   },
@@ -9670,24 +9640,7 @@ let RatePlotContainer = React.createClass({
     d = Number(d);
     pol = Number(pol);
 
-    let kL = this.langevinRate(neutralMass, ionMass, pol);
-
-    let rateArray = [];
-
-    for (let t = initialTemp; t <= finalTemp; t++) {
-      let tau = this.findTau(d, t, pol);
-      let collRate = this.kSC_Over_kL(tau) * kL;
-
-      rateArray.push({ "temp": t, "rate": collRate });
-    }
-
-    let outputJSON = {
-      "ionMass": ionMass,
-      "neutralMass": neutralMass,
-      "dipoleMoment": d,
-      "polarizability": pol,
-      "rates": rateArray
-    };
+    let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
 
     return outputJSON;
   },
@@ -9728,104 +9681,44 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  // Function that creates URL and calls getRates based on updated
-  // chemical parameters and RatePlotContainer state
-  // Called by handleUpdateParam()
-  //  ionMass: Number
-  //  neutralMass: Number
-  //  d (dipole moment): Number
-  //  pol (polarizability): Number
-  findParamsApiCall: function (ionMass, neutralMass, d, pol) {
-    let newState = {};
-    let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
-
-    // Client-Side handling
-    let data = this.newParamRates(ionMass, neutralMass, d, pol);
-    this.handleAPIResponse(data);
-
-    /*
-    this.getRates(url)
-        .then((data) => this.handleAPIResponse(data, newState))
-        .catch((error) => {
-          console.log("There was an issue with the fetch operation: " + error.message);
-          // State is still updated in the event of a '404', otherwise inputs
-          // causing the error are not updated with empty string values,
-          // preventing user from entering values < 1
-          newState.errorState = true;
-          newState.ionMass = ionMass;
-          newState.neutralMass = neutralMass;
-          newState.dipoleMoment = d;
-          newState.polarizability = pol;
-          this.setState(newState);
-        });
-        */
-  },
-
-  // Function that creates URL and calls getRates based on either a known neutral
-  // or ion mass update
-  //  val: Number or String
-  //  valType: specific String
-  findNeutralApiCall: function (val, valType) {
-    //console.log(val, valType)
-    let newState = {};
-    let data;
-
-    if (valType === "ion") {
-      url = window.location.origin + '/api/rate/findneutral?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
-      newState.ionMass = val;
-
-      // Client-Side Rendering
-      data = this.newNeutralRates(val, this.state.neutralString);
-    } else if (valType === "neutral") {
-      url = window.location.origin + '/api/rate/findneutral?neutral=' + val + '&temp=range&ionmass=' + this.state.ionMass;
-      newState.neutralString = val;
-
-      // Client-Side Rendering
-      data = this.newNeutralRates(this.state.ionMass, val);
-    }
-    //console.log(data);
-    this.handleAPIResponse(data, newState);
-
-    /*
-    this.getRates(url)
-        .then((data) => this.handleAPIResponse(data, newState))
-        .catch((error) => {
-          console.log("There was an issue with the fetch operation: " + error.message);
-          newState.errorState = true;
-          this.setState(newState);
-        });
-        */
-  },
-
   // Function passed as props to neutral and ion text inputs
   // Calls API handlers based on targeted input
   handleUpdateIonNeutral: function (e) {
+    let data;
+    let newState = {};
     if (e.target.id === "ion-input") {
       let ionMass = e.target.value;
-      this.findNeutralApiCall(ionMass, "ion");
+      //this.findNeutralApiCall(ionMass, "ion");
+      data = this.newNeutralRates(ionMass, this.state.neutralString);
     } else if (e.target.id === "neutral-input") {
       let neutralString = e.target.value;
-      this.findNeutralApiCall(neutralString, "neutral");
+      newState.neutralString = neutralString;
+      //this.findNeutralApiCall(neutralString, "neutral");
+      data = this.newNeutralRates(this.state.ionMass, neutralString);
     }
+    this.handleAPIResponse(data, newState);
   },
 
   // Function passed as props to the sliders, handles value change
   // Calls API handlers based on targeted input
   handleUpdateParam: function (e) {
     //console.log(e.target.className);
+    let data;
     if (e.target.className === "neutralMass") {
       let neutralMass = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, neutralMass, this.state.dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(this.state.ionMass, neutralMass, this.state.dipoleMoment, this.state.polarizability);
     } else if (e.target.className === "ionMass") {
       let ionMass = e.target.value;
-      this.findParamsApiCall(ionMass, this.state.neutralMass, this.state.dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(ionMass, this.state.neutralMass, this.state.dipoleMoment, this.state.polarizability);
     } else if (e.target.className === "polarizability") {
       let polarizability = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, this.state.neutralMass, this.state.dipoleMoment, polarizability);
+      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, this.state.dipoleMoment, polarizability);
     } else if (e.target.className === "dipoleMoment") {
       let dipoleMoment = e.target.value;
-      this.findParamsApiCall(this.state.ionMass, this.state.neutralMass, dipoleMoment, this.state.polarizability);
+      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, dipoleMoment, this.state.polarizability);
     }
+
+    this.handleAPIResponse(data);
   },
 
   // Plot and values for Ti+ and N2O are retrieved prior to mounting
@@ -23067,7 +22960,7 @@ module.exports = RateCSV;
 
 let React = __webpack_require__(10);
 let formatSuperscript = __webpack_require__(81);
-let validateNumber = __webpack_require__(190);
+let validateNumber = __webpack_require__(191);
 
 // Renders a group of horizontal slider and text inputs
 // for the reaction rate parameters based on props
@@ -23254,6 +23147,72 @@ module.exports = TempAxis;
 "use strict";
 
 
+let CollisionRate = {
+
+  initialTemp: 100,
+  finalTemp: 700,
+
+  findTau: function (neutralDipMoment, T, neutralAlpha) {
+    let tau = 85.11 * neutralDipMoment * Math.sqrt(1 / (neutralAlpha * T));
+    return tau;
+  },
+
+  // Langevin rate constant
+  findLangevinRate: function (m1, m2, neutralAlpha) {
+    // Reduced Mass
+    let mu = m1 * m2 / (m1 + m2);
+
+    // Rate in units of cm^3 molecules^-1 s^-1
+    let rate = 2.342 * Math.sqrt(neutralAlpha / mu) * 0.000000001;
+    return rate;
+  },
+
+  // Hitting collision rate constant divided by Langevin rate constant
+  find_kSC_over_kL: function (tau) {
+    let ratio;
+    if (tau > 2 * Math.sqrt(2)) {
+      ratio = 0.62 + 0.3371 * tau;
+    } else {
+      ratio = 0.9754 + Math.pow(tau / Math.sqrt(2) + 0.509, 2) / 10.526;
+    }
+    return ratio;
+  },
+
+  // Calculate the collision rate
+  calculateRate: function (neutralMass, ionMass, pol, d) {
+    let kL = this.findLangevinRate(neutralMass, ionMass, pol);
+
+    let rateArray = [];
+
+    for (let t = this.initialTemp; t <= this.finalTemp; t++) {
+      let tau = this.findTau(d, t, pol);
+      let collRate = this.find_kSC_over_kL(tau) * kL;
+
+      rateArray.push({ "temp": t, "rate": collRate });
+    }
+
+    let outputJSON = {
+      "ionMass": ionMass,
+      "neutralMass": neutralMass,
+      "dipoleMoment": d,
+      "polarizability": pol,
+      "rates": rateArray
+    };
+
+    return outputJSON;
+  }
+
+};
+
+module.exports = CollisionRate;
+
+/***/ }),
+/* 191 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 module.exports = validateNumber;
 
 // Checks that input does not contain any alpha numeric or non-period symbol characters
@@ -23267,7 +23226,7 @@ function validateNumber(inputVal) {
 }
 
 /***/ }),
-/* 191 */
+/* 192 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(82);
