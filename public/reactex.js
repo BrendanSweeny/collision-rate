@@ -5,6 +5,8 @@
 let React = require('react');
 let ReactDOM = require('react-dom');
 
+let neutralsJSON = require("../neutrals.json");
+
 // React Components
 let AxisLabel = require('./components/AxisLabel.Component.js');
 let SliderContainer = require('./components/SliderContainer.Component.js');
@@ -57,6 +59,33 @@ let RatePlotContainer = React.createClass({
     }
   },
 
+  findTau: function (neutralDipMoment, T, neutralAlpha) {
+    let tau = 85.11 * neutralDipMoment * Math.sqrt(1 / (neutralAlpha * T));
+    return tau;
+  },
+
+  // Hitting collision rate constant divided by Langevin rate constant
+  kSC_Over_kL: function (tau) {
+    let ratio;
+    if (tau > (2 * Math.sqrt(2))) {
+      ratio = 0.62 + 0.3371 * tau;
+    } else {
+      ratio = 0.9754 + Math.pow((tau / Math.sqrt(2)) + 0.509, 2) / 10.526;
+    }
+    return ratio;
+  },
+
+  // Langevin rate constant
+  langevinRate: function (m1, m2, neutralAlpha) {
+
+    // Reduced Mass
+    let mu = (m1 * m2/(m1 + m2));
+
+    // Rate in units of cm^3 molecules^-1 s^-1
+    let rate = 2.342 * Math.sqrt(neutralAlpha / mu) * 0.000000001;
+    return rate;
+  },
+
   // Internal function that handles API call
   // Called in findParamsApiCall() and findNeutralApiCall()
   // link: string
@@ -73,6 +102,73 @@ let RatePlotContainer = React.createClass({
       })
   },
 
+  newNeutralRates: function (ionMass, neutralQuery) {
+    let initialTemp = 100;
+    let finalTemp = 700;
+    ionMass = Number(ionMass);
+    let neutral = neutralsJSON[neutralQuery];
+    //console.log(ionMass, neutralQuery, neutral);
+    if (neutral === undefined || !ionMass) {
+      return [{"rates": null}];
+    }
+
+    let neutralMass = neutral.mass;
+    let pol = neutral.polarizability;
+    let d = neutral.dipoleMoment;
+
+    let kL = this.langevinRate(neutralMass, ionMass, pol);
+
+    let rateArray = [];
+
+    for (let t = initialTemp; t <= finalTemp; t++) {
+      let tau = this.findTau(d, t, pol);
+      let collRate = this.kSC_Over_kL(tau) * kL;
+
+      rateArray.push({"temp": t, "rate": collRate});
+    }
+
+    let outputJSON = {
+      "ionMass": ionMass,
+      "neutralName": neutralQuery,
+      "neutralMass": neutralMass,
+      "dipoleMoment": d,
+      "polarizability": pol,
+      "rates": rateArray
+    };
+
+    return outputJSON;
+  },
+
+  newParamRates: function (ionMass, neutralMass, d, pol) {
+    let initialTemp = 100;
+    let finalTemp = 700;
+    ionMass = Number(ionMass);
+    neutralMass = Number(neutralMass);
+    d = Number(d);
+    pol = Number(pol);
+
+    let kL = this.langevinRate(neutralMass, ionMass, pol);
+
+    let rateArray = []
+
+    for (let t = initialTemp; t <= finalTemp; t++) {
+      let tau = this.findTau(d, t, pol);
+      let collRate = this.kSC_Over_kL(tau) * kL;
+
+      rateArray.push({"temp": t, "rate": collRate});
+    }
+
+    let outputJSON = {
+      "ionMass": ionMass,
+      "neutralMass": neutralMass,
+      "dipoleMoment": d,
+      "polarizability": pol,
+      "rates": rateArray
+    };
+
+    return outputJSON;
+  },
+
   // Internal function that handles the API response and updates component state
   // data: JSON object received from server
   // newState: object
@@ -81,7 +177,7 @@ let RatePlotContainer = React.createClass({
       newState = {};
     }
 
-    if (!data) {
+    if (!data.rates) {
       //console.log(data);
       newState.errorState = true;
       this.setState(newState);
@@ -116,6 +212,12 @@ let RatePlotContainer = React.createClass({
     let newState = {};
     let url = window.location.origin + '/api/rate/?ionmass=' + ionMass + '&neutralmass=' + neutralMass + '&d=' + d + '&pol=' + pol + '&temp=range';
 
+    // Client-Side handling
+    let data = this.newParamRates(ionMass, neutralMass, d, pol);
+    this.handleAPIResponse(data);
+
+
+    /*
     this.getRates(url)
         .then((data) => this.handleAPIResponse(data, newState))
         .catch((error) => {
@@ -130,6 +232,7 @@ let RatePlotContainer = React.createClass({
           newState.polarizability = pol;
           this.setState(newState);
         });
+        */
   },
 
   // Function that creates URL and calls getRates based on either a known neutral
@@ -137,15 +240,29 @@ let RatePlotContainer = React.createClass({
   //  val: Number or String
   //  valType: specific String
   findNeutralApiCall: function (val, valType) {
+    //console.log(val, valType)
     let newState = {};
+    let data;
+
     if (valType === "ion") {
       url = window.location.origin + '/api/rate/findneutral?neutral=' + this.state.neutralString + '&temp=range&ionmass=' + val;
       newState.ionMass = val;
+
+      // Client-Side Rendering
+      data = this.newNeutralRates(val, this.state.neutralString);
+
     } else if (valType === "neutral") {
       url = window.location.origin + '/api/rate/findneutral?neutral=' + val + '&temp=range&ionmass=' + this.state.ionMass;
       newState.neutralString = val;
-    }
 
+      // Client-Side Rendering
+      data = this.newNeutralRates(this.state.ionMass, val);
+    }
+    //console.log(data);
+    this.handleAPIResponse(data, newState);
+
+
+    /*
     this.getRates(url)
         .then((data) => this.handleAPIResponse(data, newState))
         .catch((error) => {
@@ -153,6 +270,7 @@ let RatePlotContainer = React.createClass({
           newState.errorState = true;
           this.setState(newState);
         });
+        */
   },
 
   // Function passed as props to neutral and ion text inputs
@@ -188,8 +306,11 @@ let RatePlotContainer = React.createClass({
 
   // Plot and values for Ti+ and N2O are retrieved prior to mounting
   componentWillMount: function () {
-    this.getRates(window.location.origin + '/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
-      .then((data) => this.handleAPIResponse(data));
+    //this.getRates(window.location.origin + '/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
+      //.then((data) => this.handleAPIResponse(data));
+
+      let data = this.newNeutralRates(48, "N2O")
+      this.handleAPIResponse(data);
   },
 
   // Renders chart or placeholder with error message based on state of 'errorState'
