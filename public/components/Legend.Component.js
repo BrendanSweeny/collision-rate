@@ -3,9 +3,9 @@
 let React = require('react');
 let generateKey = require('../utils/basicKeyGenerator.js');
 
-// Renders a legend on the plot area with values passed as an array of objects
+// Renders a legend in the plot area with values passed as an array of objects
 // each with a name and value property
-// Called by LineChart
+// Called by DataSeries
 let Legend = React.createClass({
   propTypes: {
     width: React.PropTypes.number,
@@ -16,7 +16,7 @@ let Legend = React.createClass({
 
   render: function () {
     let { width, height, margin, valueObj } = this.props;
-    let x = (width + margin.left) * 3/4;
+    let x = (width + margin.left) * 3/5;
     let y = margin.top + height / 20;
     return (
       <text className="text legend">

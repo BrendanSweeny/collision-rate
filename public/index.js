@@ -1,5 +1,5 @@
-// TODO: move most children from DataSeries to LineChart if possible
 // TODO: Make chart placeholder more instructive
+// TODO: Handle empty parameter values
 
 // Styles
 import mainStyles from './styles/main.css';
@@ -16,16 +16,11 @@ let neutralsJSON = require("../neutrals.json");
 let CollisionRate = require("./utils/CollisionRate")
 
 // React Components
-let AxisLabel = require('./components/AxisLabel.Component.js');
 let SliderContainer = require('./components/SliderContainer.Component.js');
 let ChartPlaceHolder = require('./components/ChartPlaceHolder.Component.js');
-let Border = require('./components/Border.Component.js');
-let TempAxis = require('./components/TempAxis.Component.js');
-let RateAxis = require('./components/RateAxis.Component.js');
-let Focus = require('./components/Focus.Component.js');
-let Line = require('./components/Line.Component.js');
-let Legend = require('./components/Legend.Component.js');
-let RateCSV = require('./components/RateCSV.Component.js');
+let CsvTable = require('./components/CsvTable.Component.js');
+let ChemicalInput = require('./components/ChemicalInput.Component.js');
+let SvgContainer = require('./components/SvgContainer.Component.js');
 
 
 // Container Class responsible for maintaining state of chart and inputs
@@ -67,33 +62,6 @@ let RatePlotContainer = React.createClass({
         tabulate: true
       });
     }
-  },
-
-  findTau: function (neutralDipMoment, T, neutralAlpha) {
-    let tau = 85.11 * neutralDipMoment * Math.sqrt(1 / (neutralAlpha * T));
-    return tau;
-  },
-
-  // Hitting collision rate constant divided by Langevin rate constant
-  kSC_Over_kL: function (tau) {
-    let ratio;
-    if (tau > (2 * Math.sqrt(2))) {
-      ratio = 0.62 + 0.3371 * tau;
-    } else {
-      ratio = 0.9754 + Math.pow((tau / Math.sqrt(2)) + 0.509, 2) / 10.526;
-    }
-    return ratio;
-  },
-
-  // Langevin rate constant
-  langevinRate: function (m1, m2, neutralAlpha) {
-
-    // Reduced Mass
-    let mu = (m1 * m2/(m1 + m2));
-
-    // Rate in units of cm^3 molecules^-1 s^-1
-    let rate = 2.342 * Math.sqrt(neutralAlpha / mu) * 0.000000001;
-    return rate;
   },
 
   newNeutralRates: function (ionMass, neutralQuery) {
@@ -211,13 +179,15 @@ let RatePlotContainer = React.createClass({
 
   // Renders chart or placeholder with error message based on state of 'errorState'
   render: function () {
-    let { ionMass, neutralMass, neutralString, width, height, margin, data, xDomain, yDomain, dipoleMoment, polarizability, tabulate } = this.state;
+    let { ionMass, neutralMass, neutralString, width, height, margin,
+        data, xDomain, yDomain, dipoleMoment, polarizability,
+        tabulate } = this.state;
     //console.log("<RatePlotContainer />: render", ionMass);
 
-    // Displays data in LineChart or CSV (toggled using button)
+    // Displays data in SvgContainer or CsvTable (toggled using 'tabulate' button)
     let display;
     if (tabulate === false) {
-      display = <LineChart
+      display = <SvgContainer
                   width={width}
                   height={height}
                   margin={margin}
@@ -230,7 +200,7 @@ let RatePlotContainer = React.createClass({
                   polarizability={polarizability}
                 />
     } else {
-      display = <RateCSV
+      display = <CsvTable
                   width={width}
                   height={height}
                   margin={margin}
@@ -240,6 +210,7 @@ let RatePlotContainer = React.createClass({
 
     return (
       <div>
+
         <div className="chem-input-container">
           <ChemicalInput
             idName="ion-input"
@@ -269,6 +240,7 @@ let RatePlotContainer = React.createClass({
         ) : (
           display
         )}
+
         <SliderContainer
           neutralMass={neutralMass}
           ionMass={ionMass}
@@ -276,253 +248,7 @@ let RatePlotContainer = React.createClass({
           polarizability={polarizability}
           handleUpdateParam={this.handleUpdateParam}
         />
-      </div>
-    )
-  }
-});
 
-// Component containing the svg element
-// Renders <DataSeries /> based on props from <RatePlotContainer />
-let LineChart = React.createClass({
-  propTypes: {
-    width: React.PropTypes.number,
-    height: React.PropTypes.number,
-    neutralMass: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]),
-    ionMass: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]),
-    dipoleMoment: React.PropTypes.number,
-    polarizability: React.PropTypes.number,
-    margin: React.PropTypes.object,
-    data: React.PropTypes.array.isRequired,
-    xDomain: React.PropTypes.array,
-    yDomain: React.PropTypes.array
-  },
-
-  getDefaultProps: function () {
-    return {
-      width: 960,
-      height: 500,
-    };
-  },
-
-  render: function () {
-    let { width, height, margin, data, xDomain, yDomain, ionMass, neutralMass, dipoleMoment, polarizability } = this.props;
-
-    let x = d3.scaleLinear()
-              .domain(xDomain)
-              .range([0, width]);
-
-    let y = d3.scaleLinear()
-              .domain(yDomain)
-              .range([height, 0]);
-              //console.log("<LineChart />: render", width, height);
-              //console.log("<LineChart />: render", x(data[0].temp), y(data[0].rate));
-
-    return (
-      <svg id="chart" width={width + margin.left + margin.right} height={height + margin.top + margin.bottom}>
-        <DataSeries
-          x={x}
-          y={y}
-          data={data}
-          width={width}
-          height={height}
-          margin={margin}
-        />
-        <Legend
-          width={width}
-          height={height}
-          margin={margin}
-          valueObj={[
-            {
-              "name": "Ion Mass",
-              "value": ionMass
-            },
-            {
-              "name": "Neutral Mass",
-              "value": neutralMass
-            },
-            {
-              "name": "Dipole Moment",
-              "value": dipoleMoment
-            },
-            {
-              "name": "Polarizability",
-              "value": polarizability
-            }
-          ]}
-        />
-      </svg>
-    );
-  }
-});
-
-// Component containing the plot area
-// Renders D3 elements using a combination of DOM manipulation
-// by React and D3.js
-let DataSeries = React.createClass({
-  propTypes: {
-    data: React.PropTypes.array,
-    margin: React.PropTypes.object,
-    height: React.PropTypes.number,
-    width: React.PropTypes.number,
-    interpolationType: React.PropTypes.string,
-    x: React.PropTypes.func,
-    xDomain: React.PropTypes.array,
-    y: React.PropTypes.func,
-    yDomain: React.PropTypes.array
-  },
-
-  getDefaultProps: function () {
-    return {
-      data: [],
-      interpolationType: 'cardinal'
-    };
-  },
-
-  componentDidMount: function () {
-    d3.select(".overlay").on("mousemove", this.handleMouseMove);
-  },
-
-  handleMouseMove: function () {
-
-    function reformatSciNotation (d, i) {
-      d = d.toExponential(2);
-      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$1x10");
-      return d;
-    }
-
-    function addExponent (d, i) {
-      d = d.toExponential(2);
-      d = d.replace(/(\d+.?\d*)e\+?(-?\d+)/, "$2");
-      return d;
-    }
-
-    let { data, x, y } = this.props;
-    let focus = d3.select(".focus");
-    let overlay = d3.select(".overlay").node();
-    // Returns index of value in array that corresponds to pointer x-position
-    let bisectTemp = d3.bisector((d) => { return d.temp; }).left;
-    // temp at the x-value of the cursor:
-    let x0 = x.invert(d3.mouse(overlay)[0]),
-        // index of temp value in data array:
-        i = bisectTemp(data, x0, 1),
-        // index to left of cursor:
-        d0 = data[i - 1],
-        // index to right of cursor:
-        d1 = data[i],
-        // If the cursor is closer "in temp" to next point to the left, assign that to d,
-        // otherwise, assign right point to d
-        d = x0 - d0.data > d1.data - x0 ? d1 : d0;
-
-        // Focus component is rendered using D3.js when updated, not React
-        focus.attr("transform", "translate(" + x(d.temp) + "," + y(d.rate) + ")");
-        focus.select(".v-line").attr("y2", this.props.height - y(d.rate));
-        focus.select(".h-line").attr("x2", 0 - x(d.temp));
-        focus.select(".text-temp").text("T: " + d.temp);
-        focus.select(".text-rate").text("Rate: " + reformatSciNotation(d.rate)).append("tspan").attr("dy", "-.5em").text(addExponent(d.rate));
-  },
-
-  handleMouseOver: function () {
-    d3.select(".focus").style("display", null);
-  },
-
-  handleMouseOut: function () {
-    d3.select(".focus").style("display", "none");
-  },
-
-  // Focus is initially rendered with 'display: none' by React
-  // Updates to Focus (on mousemove) are handled by D3.js
-  render: function () {
-    let { data, margin, interpolationType, x, y, height, width } = this.props;
-
-    let line = d3.line()
-                 .x((d) => { return x(d.temp); })
-                 .y((d) => { return y(d.rate); });
-
-    let yLabelText = "Rate / cm^3 molecules^-1 s^-1";
-    let xLabelText = "Temperature / K";
-
-    //console.log("<DataSeries />: render", line(data));
-    return (
-      <g id="plot-area" transform={"translate(" + margin.left + "," + margin.top + ")"} >
-        <Line
-          path={line(data)}
-        />
-        <TempAxis x={x} height={height} />
-        <RateAxis y={y} />
-        <Focus />
-        <Border
-          width={width}
-          height={height}
-        />
-        <AxisLabel className="x-label" x={width / 2} y={height + margin.top + margin.bottom * 0.7} labelText={xLabelText} />
-        <AxisLabel className="y-label" x={0 - height / 2} y={0 - margin.left * 3/4} transform="rotate(-90)" labelText={yLabelText} />
-        <rect
-          className="overlay"
-          width={width}
-          height={height}
-          style={{fill: "none", pointerEvents: "all"}}
-          onMouseOver={this.handleMouseOver}
-          onMouseOut={this.handleMouseOut}
-        />
-      </g>
-    );
-  }
-});
-
-// Input components for ion and neutral
-let ChemicalInput = React.createClass({
-  propTypes: {
-    idName: React.PropTypes.string,
-    title: React.PropTypes.string,
-    handleUpdateIonNeutral: React.PropTypes.func,
-    defaultValue: React.PropTypes.oneOfType([
-      React.PropTypes.string,
-      React.PropTypes.number
-    ])
-  },
-
-  getInitialState: function () {
-    return {
-      value: this.props.defaultValue
-    }
-  },
-
-  handleUpdateIon: function (e) {
-      this.props.handleUpdateIonNeutral(e);
-      this.setState({
-        value: e.target.value
-      })
-  },
-
-  // Allows input value to update when value of HorizontalSlider is changed
-  componentWillReceiveProps: function (nextProps) {
-
-    // nextProps.defaultValue of null throws React controlled/uncontrolled error
-    // Allows for some'invalid' inputs e.g. '1.'
-    // Will not update state (string) when props = 1 and state.value = '1.'
-    // if component is allowed to update when props.value === '.' => React uncontrolled/controlled component error
-    if (nextProps.defaultValue && nextProps.defaultValue !== Number(this.state.value)) {
-      this.setState({
-        value: nextProps.defaultValue
-      })
-    }
-  },
-
-  render: function () {
-    return (
-      <div className="chem-input">
-        <h4>{this.props.title}</h4>
-        <input
-          id={this.props.idName}
-          value={this.state.value}
-          onChange={this.handleUpdateIon}
-        />
       </div>
     )
   }

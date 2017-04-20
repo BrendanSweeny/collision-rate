@@ -2,6 +2,7 @@
 
 let React = require('react');
 
+// SVG path element that makes up the line in the line chart
 let Line = React.createClass({
   propTypes: {
     path: React.PropTypes.string,
