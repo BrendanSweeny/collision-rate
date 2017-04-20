@@ -1,6 +1,7 @@
 'use strict';
 
 let React = require('react');
+let generateKey = require('../utils/basicKeyGenerator.js');
 
 // Renders a legend on the plot area with values passed as an array of objects
 // each with a name and value property
@@ -20,7 +21,7 @@ let Legend = React.createClass({
     return (
       <text className="text legend">
         {valueObj.map((obj, index) => {
-          return <tspan className="legend-entry" x={x} y={y} dy={(1.2 * index).toString() + "em"}>{obj.name + ": " + obj.value}</tspan>
+          return <tspan key={generateKey()} className="legend-entry" x={x} y={y} dy={(1.2 * index).toString() + "em"}>{obj.name + ": " + obj.value}</tspan>
         })}
       </text>
     )

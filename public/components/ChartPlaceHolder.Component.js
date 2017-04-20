@@ -2,6 +2,7 @@
 
 let React = require('react');
 let Border = require('./Border.Component.js');
+let generateKey = require('../utils/basicKeyGenerator.js');
 
 let ChartPlaceHolder = React.createClass({
   propTypes: {
@@ -33,7 +34,7 @@ let ChartPlaceHolder = React.createClass({
           {typeof message === "string"
             ? <text textAnchor={textAnchor} x={width / 20} y={height / 10} dangerouslySetInnerHTML={{__html: message}} />
             : message.map((line, index) => {
-              return <text textAnchor={textAnchor} x={width / 20} y={height / 10} dy={(index * 1.2).toString() + "em"} dangerouslySetInnerHTML={{__html: line}} />;
+              return <text key={generateKey()} textAnchor={textAnchor} x={width / 20} y={height / 10} dy={(index * 1.2).toString() + "em"} dangerouslySetInnerHTML={{__html: line}} />;
             })
           }
         </g>

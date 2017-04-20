@@ -1,11 +1,18 @@
 // TODO: move most children from DataSeries to LineChart if possible
 // TODO: Make chart placeholder more instructive
 
+// Styles
+import mainStyles from './styles/main.css';
+import sliderStyles from './styles/slider.css';
+
 // Packages
 let React = require('react');
 let ReactDOM = require('react-dom');
 
+// Nuetral Molecule Data
 let neutralsJSON = require("../neutrals.json");
+
+// Collision Rate Calculator Utility
 let CollisionRate = require("./utils/CollisionRate")
 
 // React Components

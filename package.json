@@ -2,10 +2,8 @@
   "name": "collision-rate-calculator",
   "version": "0.0.1",
   "description": "A simple collision rate calculator microservice for polar ion molecule kinetics",
-  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config ./webpack.config.prod.js --progress --colors"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Brendan Sweeny",
   "license": "ISC",
@@ -20,6 +18,8 @@
     "html-webpack-plugin": "^2.28.0"
   },
   "devDependencies": {
+    "css-loader": "^0.28.0",
+    "style-loader": "^0.16.1",
     "webpack-dev-server": "^2.4.2"
   }
 }
