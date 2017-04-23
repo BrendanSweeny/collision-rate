@@ -1,5 +1,4 @@
 // TODO: Make chart placeholder more instructive
-// TODO: Handle empty parameter values
 
 // Styles
 import mainStyles from './styles/main.css';
@@ -37,11 +36,13 @@ let RatePlotContainer = React.createClass({
       width: width,
       height: height,
       margin: margin,
-      neutralString: "N2O",
-      ionMass: 48,
-      neutralMass: 17,
-      dipoleMoment: 1.47,
-      polarizability: 2.2,
+      chemicalParams: {
+        neutralString: "N2O",
+        ionMass: 48,
+        neutralMass: 17,
+        dipoleMoment: 1.47,
+        polarizability: 2.2
+      },
       xDomain: [],
       yDomain: [],
       data: [],
@@ -50,9 +51,9 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  // Clickhandler function for tabulate button
-  // Changing state changes whether plot or table is displayed
-  toggleTabulate: function () {
+  // Clickhandler function for tabulate button.
+  // Toggling state changes whether plot or table is displayed
+  toggleTabulateData: function () {
     if (this.state.tabulate) {
       this.setState({
         tabulate: false
@@ -64,14 +65,15 @@ let RatePlotContainer = React.createClass({
     }
   },
 
-  newNeutralRates: function (ionMass, neutralQuery) {
+  // Function that handles data generation for changes to the ion and neutral inputs
+  getNeutralRates: function (ionMass, neutralQuery) {
     let initialTemp = 100;
     let finalTemp = 700;
     ionMass = Number(ionMass);
     let neutral = neutralsJSON[neutralQuery];
     //console.log(ionMass, neutralQuery, neutral);
     if (neutral === undefined || !ionMass) {
-      return [{"rates": null}];
+      return null;
     }
 
     let neutralMass = neutral.mass;
@@ -79,11 +81,23 @@ let RatePlotContainer = React.createClass({
     let d = neutral.dipoleMoment;
 
     let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
+    outputJSON.neutralString = neutralQuery;
 
     return outputJSON;
   },
 
-  newParamRates: function (ionMass, neutralMass, d, pol) {
+  // Function that prepares the data generation call when individual parametes
+  // are changed
+  getParamRates: function (chemicalParams) {
+    let ionMass = chemicalParams.ionMass;
+    let neutralMass = chemicalParams.neutralMass;
+    let pol = chemicalParams.polarizability;
+    let d = chemicalParams.dipoleMoment;
+
+    if (!ionMass || !neutralMass || !pol) {
+      return null;
+    }
+
     let initialTemp = 100;
     let finalTemp = 700;
     ionMass = Number(ionMass);
@@ -92,98 +106,134 @@ let RatePlotContainer = React.createClass({
     pol = Number(pol);
 
     let outputJSON = CollisionRate.calculateRate(neutralMass, ionMass, pol, d);
-
     return outputJSON;
   },
 
   // Internal function that handles the API response and updates component state
   // data: JSON object received from server
   // newState: object
-  handleAPIResponse: function (data, newState) {
+  handleNewData: function (data, newState) {
     if (!newState) {
-      newState = {};
+      newState = {
+        chemicalParams: this.state.chemicalParams
+      };
     }
 
-    if (!data.rates) {
-      //console.log(data);
-      newState.errorState = true;
-      this.setState(newState);
-    } else {
-      //console.log(data);
+    if (data) {
+      // Determine the axes range
       let xExtent = d3.extent(data.rates, (d) => { return d.temp; })
       let yExtent = d3.extent(data.rates, (d) => { return d.rate; })
 
       // Expand the y extent
       yExtent[0] = yExtent[0] - (yExtent[0] * 0.05);
       yExtent[1] = yExtent[1] + (yExtent[1] * 0.05);
+
       newState.data = data.rates;
       newState.xDomain = xExtent;
       newState.yDomain = yExtent;
-      newState.errorState = false;
-      newState.ionMass = data.ionMass;
-      newState.neutralMass = data.neutralMass;
-      newState.dipoleMoment = data.dipoleMoment;
-      newState.polarizability = data.polarizability;
+      newState.chemicalParams.ionMass = data.ionMass;
+      newState.chemicalParams.neutralMass = data.neutralMass;
+      newState.chemicalParams.dipoleMoment = data.dipoleMoment;
+      newState.chemicalParams.polarizability = data.polarizability;
+    } else {
+      newState.errorState = true;
+    }
+
+    this.setState(newState);
+  },
+
+  // Function passed as props to neutral and ion text inputs
+  // Calls data handlers based on targeted input
+  // Changes errorState when input fields are empty
+  handleUpdateIonNeutral: function (e) {
+    let data;
+    let newState = {
+      chemicalParams: this.state.chemicalParams
+    };
+    if (e.target.id === "ion-input") {
+      let ionMass = e.target.value;
+      if (!ionMass || !this.state.chemicalParams.neutralString) {
+        newState.errorState = true;
+        newState.chemicalParams.ionMass = ionMass;
+        this.setState(newState);
+      } else {
+        newState.chemicalParams.ionMass = ionMass;
+        newState.errorState = false;
+        data = this.getNeutralRates(ionMass, this.state.chemicalParams.neutralString);
+        //console.log(data);
+        this.handleNewData(data, newState);
+      }
+    } else if (e.target.id === "neutral-input") {
+      let neutralString = e.target.value;
+      if (!neutralString || !this.state.chemicalParams.ionMass) {
+        newState.errorState = true;
+        newState.chemicalParams.neutralString = neutralString;
+        this.setState(newState);
+      } else {
+        newState.chemicalParams.neutralString = neutralString;
+        newState.errorState = false;
+        //this.findNeutralApiCall(neutralString, "neutral");
+        data = this.getNeutralRates(this.state.chemicalParams.ionMass, neutralString);
+        //console.log(data);
+        this.handleNewData(data, newState);
+      }
+    }
+  },
+
+  // Function passed as props to the sliders, handles value change
+  // Calls data handlers based on targeted input and changes errorState if
+  // input field is blank
+  newHandleUpdateParam: function (e) {
+    let value = e.target.value;
+    let data;
+    // Default false error state
+    let newState = {
+      errorState: false,
+      chemicalParams: this.state.chemicalParams
+    };
+    // Check that there is a non-empty value (if it's not dipoleMoment)
+    if (!value && e.target.className !== "dipoleMoment") {
+      newState.errorState = true;
+      newState.chemicalParams[e.target.className] = value;
+    }
+    // Check for non-empty params in current state
+    for (let param in this.state.className) {
+      if (!param && param !== "dipoleMoment") {
+        newState.errorState = true;
+      }
+    }
+    // Update the newState parameter value with the input value and the other
+    // current state values
+    if (!newState.errorState) {
+      newState.chemicalParams = {};
+      for (let param in this.state.chemicalParams) {
+        if (param === e.target.className) {
+          newState.chemicalParams[param] = value;
+        } else {
+          newState.chemicalParams[param] = this.state.chemicalParams[param];
+        }
+      }
+      // Generate new data and handle it or set errorState
+      data = this.getParamRates(newState.chemicalParams)
+      this.handleNewData(data, newState);
+    } else {
       this.setState(newState);
     }
   },
 
-  // Function passed as props to neutral and ion text inputs
-  // Calls API handlers based on targeted input
-  handleUpdateIonNeutral: function (e) {
-    let data;
-    let newState = {};
-    if (e.target.id === "ion-input") {
-      let ionMass = e.target.value;
-      //this.findNeutralApiCall(ionMass, "ion");
-      data = this.newNeutralRates(ionMass, this.state.neutralString);
-    } else if (e.target.id === "neutral-input") {
-      let neutralString = e.target.value;
-      newState.neutralString = neutralString;
-      //this.findNeutralApiCall(neutralString, "neutral");
-      data = this.newNeutralRates(this.state.ionMass, neutralString);
-    }
-    this.handleAPIResponse(data, newState);
-  },
-
-  // Function passed as props to the sliders, handles value change
-  // Calls API handlers based on targeted input
-  handleUpdateParam: function (e) {
-    //console.log(e.target.className);
-    let data;
-    if (e.target.className === "neutralMass") {
-      let neutralMass = e.target.value;
-      data = this.newParamRates(this.state.ionMass, neutralMass, this.state.dipoleMoment, this.state.polarizability);
-    } else if (e.target.className === "ionMass") {
-      let ionMass = e.target.value;
-      data = this.newParamRates(ionMass, this.state.neutralMass, this.state.dipoleMoment, this.state.polarizability);
-    } else if (e.target.className === "polarizability") {
-      let polarizability = e.target.value;
-      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, this.state.dipoleMoment, polarizability);
-    } else if (e.target.className === "dipoleMoment") {
-      let dipoleMoment = e.target.value;
-      data = this.newParamRates(this.state.ionMass, this.state.neutralMass, dipoleMoment, this.state.polarizability);
-    }
-
-    this.handleAPIResponse(data);
-  },
-
   // Plot and values for Ti+ and N2O are retrieved prior to mounting
   componentWillMount: function () {
-    //this.getRates(window.location.origin + '/api/rate/findneutral/?neutral=N2O&temp=range&ionmass=48')
-      //.then((data) => this.handleAPIResponse(data));
 
-      let data = this.newNeutralRates(48, "N2O")
-      this.handleAPIResponse(data);
+      let data = this.getNeutralRates(48, "N2O")
+      this.handleNewData(data);
   },
 
   // Renders chart or placeholder with error message based on state of 'errorState'
   render: function () {
-    let { ionMass, neutralMass, neutralString, width, height, margin,
-        data, xDomain, yDomain, dipoleMoment, polarizability,
-        tabulate } = this.state;
-    //console.log("<RatePlotContainer />: render", ionMass);
+    let { width, height, margin, data, xDomain, yDomain,
+        tabulate, errorState, chemicalParams } = this.state;
 
+    //console.log("<RatePlotContainer />: render", ionMass);
     // Displays data in SvgContainer or CsvTable (toggled using 'tabulate' button)
     let display;
     if (tabulate === false) {
@@ -194,10 +244,10 @@ let RatePlotContainer = React.createClass({
                   data={data}
                   xDomain={xDomain}
                   yDomain={yDomain}
-                  ionMass={ionMass}
-                  neutralMass={neutralMass}
-                  dipoleMoment={dipoleMoment}
-                  polarizability={polarizability}
+                  ionMass={chemicalParams.ionMass}
+                  neutralMass={chemicalParams.neutralMass}
+                  dipoleMoment={chemicalParams.dipoleMoment}
+                  polarizability={chemicalParams.polarizability}
                 />
     } else {
       display = <CsvTable
@@ -215,21 +265,21 @@ let RatePlotContainer = React.createClass({
           <ChemicalInput
             idName="ion-input"
             title="Ion Mass"
-            defaultValue={ionMass}
+            defaultValue={chemicalParams.ionMass}
             handleUpdateIonNeutral={this.handleUpdateIonNeutral}
           />
           <ChemicalInput
             idName="neutral-input"
             title="Neutral"
-            defaultValue={neutralString}
+            defaultValue={chemicalParams.neutralString}
             handleUpdateIonNeutral={this.handleUpdateIonNeutral}
           />
           <div style={{'position': 'relative'}}>
-            <button className="tabulate-btn" onClick={this.toggleTabulate}>Tabulate</button>
+            <button className="tabulate-btn" onClick={this.toggleTabulateData}>Tabulate</button>
           </div>
         </div>
 
-        {this.state.errorState ? (
+        {errorState ? (
           <ChartPlaceHolder
             width={width}
             height={height}
@@ -242,11 +292,11 @@ let RatePlotContainer = React.createClass({
         )}
 
         <SliderContainer
-          neutralMass={neutralMass}
-          ionMass={ionMass}
-          dipoleMoment={dipoleMoment}
-          polarizability={polarizability}
-          handleUpdateParam={this.handleUpdateParam}
+          neutralMass={chemicalParams.neutralMass}
+          ionMass={chemicalParams.ionMass}
+          dipoleMoment={chemicalParams.dipoleMoment}
+          polarizability={chemicalParams.polarizability}
+          handleUpdateParam={this.newHandleUpdateParam}
         />
 
       </div>
